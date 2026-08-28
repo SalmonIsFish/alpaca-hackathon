@@ -54,6 +54,11 @@ def call_featherless(prompt: str, *, api_key: str, model: str) -> str:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            # Featherless sits behind Cloudflare, which fingerprint-blocks (403, Cloudflare
+            # error 1010) urllib's default "Python-urllib/x.y" User-Agent. Confirmed against
+            # the real API on 2026-08-29 -- without this header every call is bot-blocked
+            # before it ever reaches Featherless, regardless of API key validity.
+            "User-Agent": "amanah-trader-agent/0.1 (+https://github.com/SalmonIsFish/alpaca-hackathon)",
         },
     )
     with urllib.request.urlopen(request, timeout=30) as response:
