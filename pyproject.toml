@@ -1,0 +1,8 @@
+[project]
+name = "amanah-trader-agent"
+version = "0.1.0"
+description = "Autonomous Shariah-compliant options-trading agent for the Alpaca AI Trading Agents Hackathon"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,14 @@
+{
+  "AAPL": {"rationale": "Consumer hardware/software; no material interest-based revenue segment.", "added": "2026-08-29"},
+  "MSFT": {"rationale": "Enterprise software/cloud; core business is licensing and services, not lending.", "added": "2026-08-29"},
+  "GOOGL": {"rationale": "Advertising and cloud services; no lending/insurance business line.", "added": "2026-08-29"},
+  "NVDA": {"rationale": "Semiconductor design; hardware sales, no financial-services segment.", "added": "2026-08-29"},
+  "ADBE": {"rationale": "Software licensing/subscriptions; no interest-based revenue.", "added": "2026-08-29"},
+  "CRM": {"rationale": "Enterprise SaaS; subscription revenue model.", "added": "2026-08-29"},
+  "COST": {"rationale": "Membership-based retail; goods and services, not financial products.", "added": "2026-08-29"},
+  "PG": {"rationale": "Consumer staples manufacturer; no financial-services segment.", "added": "2026-08-29"},
+  "JNJ": {"rationale": "Pharmaceuticals/medical devices; product sales, not lending.", "added": "2026-08-29"},
+  "HD": {"rationale": "Home-improvement retail; goods and installation services.", "added": "2026-08-29"},
+  "ORCL": {"rationale": "Database/cloud software licensing.", "added": "2026-08-29"},
+  "CSCO": {"rationale": "Networking hardware/software; no financial-services segment.", "added": "2026-08-29"}
+}
