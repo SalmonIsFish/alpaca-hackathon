@@ -28,11 +28,24 @@ to `cp` or paste a block from that repo, stop.
 
 - **Repo:** new, empty-at-start, only in-window commits. Can stay **private** until judging,
   must be **public** during the judging period.
-- **Alpaca account:** exactly **one** brand-new paper account, created after kickoff, starting
-  balance **exactly $100,000**. No need for a separate "testing" account and "submission"
-  account — same account, used continuously. Confirmed directly by an Alpaca mentor: **only
-  performance on that fresh account counts toward judging** — no hard "must start Monday" gate,
-  just has to be the fresh account. More trading days = better track record, no reason to wait.
+- **Alpaca account — corrected 2026-08-29, from Erika Zapanta's (Alpaca) official Google Doc,
+  read directly rather than relayed through Discord:** create the dedicated $100k paper account
+  now, but **do not trade on it yet**. Use a **separate testing account** for all development
+  this weekend. **The dedicated account's trading must begin Monday, August 31, 9:30 a.m. ET** —
+  the doc says so explicitly: "Please do not use your testing account for the official P&L
+  measurement." An earlier Discord answer implied no hard Monday gate — that was wrong, or at
+  least imprecise; trust this doc over that chat answer.
+- **Official P&L measurement window: Mon Aug 31 9:30am ET → Fri Sep 4 9:30am ET.** Scored as a
+  **snapshot of total account equity** (not cash) at the official hackathon close — so an open
+  position at the snapshot moment counts same as a closed one.
+- **Judging is not P&L-only.** Two factors: (1) P&L during the official window, judged on total
+  equity; (2) "the creativity, autonomy, and robustness of the agent trading workflow." Quoted
+  directly: "P&L will be an important factor, but winners will not be selected based on P&L
+  alone."
+- **UI explicitly not required**, confirmed in writing: "We are primarily evaluating the
+  autonomous agent workflow and its trading performance." Reinforces the autonomous-mode pivot
+  below — a hosted status page only needs to satisfy the separate Application URL field, not be
+  a polished dashboard.
 - **MCP vs CLI:** the written requirement is "MCP server **or** CLI" — either satisfies it. One
   Discord answer said "good to incorporate both if possible" (soft, not a hard requirement).
 - **Options trading is mandatory** in every strategy, regardless of track.
@@ -51,6 +64,11 @@ to `cp` or paste a block from that repo, stop.
   — don't plan around it.
 - **Featherless AI:** $25 credit via code `ALPACA26`, one redemption per participant, keep the
   code out of anything public (never commit it).
+- **New technical resource, not previously listed:** `github.com/alpacahq/alpaca-skills` — check
+  before building, may already cover patterns we'd otherwise write from scratch.
+- **Market data:** free tier gives an indicative options feed; Algo Trader Plus (paid) gives the
+  real OPRA feed. Not automatically granted — participants choose/pay for it themselves if
+  wanted. Free tier is fine to start with.
 
 ## Strategy pivot: fully autonomous, not human-approval-gated
 
@@ -110,18 +128,26 @@ produce something embarrassing mid-demo.
 - Multi-account resilience, anything from the old repo's "Known limitations" production-scale
   concerns.
 
-## Rough sequence
+## Rough sequence (corrected 2026-08-29 for the real Monday gate)
 
-1. Alpaca REST adapter + account wiring against the fresh $100k account.
-2. MCP transport for execution.
-3. One option structure, simplified Shariah gate, risk caps — get one real trade placed on the
-   fresh account as early as possible (no hard start-date gate, every day counts).
-4. Wire actual cron scheduling once the manual-trigger version works.
-5. Trade regularly through the week; keep the reasoning-trace log growing.
-6. Minimal hosted status page live with an Application URL.
-7. Freeze broker-facing code a day or two before the deadline; finish video/slides/cover
+1. Create the dedicated $100k account now; create a **separate testing account** for everything
+   below until Monday. Do not place any order on the dedicated account before Mon Aug 31, 9:30am
+   ET — it's explicitly against the written instructions, not just unhelpful.
+2. Alpaca REST adapter + account wiring, developed and tested against the **testing** account.
+3. MCP transport for execution, same testing account.
+4. One option structure, simplified Shariah gate, risk caps — get the full loop working
+   end-to-end on the testing account over the weekend (Fri 8/29 – Sun 8/30).
+5. Wire actual cron scheduling once the manual-trigger version works, still against the testing
+   account.
+6. **Monday Aug 31, 9:30am ET: point execution at the dedicated account and place the first
+   trade that counts.** This is the real start line, not kickoff.
+7. Trade through Mon–Thu; keep the reasoning-trace log growing — it's evidence for the
+   "creativity, autonomy, robustness" half of judging, not just a nice-to-have.
+8. Minimal hosted status page live with an Application URL (doesn't need to be a dashboard — UI
+   isn't judged).
+9. Freeze broker-facing code a day or two before the deadline; finish video/slides/cover
    image/one-page write-up.
-8. Submit early — don't wait for Sep 4, 15:00 UTC.
+10. Submit early — don't wait for Sep 4, 15:00 UTC (= 8:00 AM PDT, confirmed in the doc).
 
 ## Open questions (not yet answered — ask if there's another Q&A window)
 
