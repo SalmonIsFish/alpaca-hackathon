@@ -4,6 +4,16 @@
 Read this before writing any code in this repo. If you're a fresh session picking this up,
 this file plus `README.md` is everything you need to not re-litigate decisions already made.
 
+## Account IDs (confirmed 2026-08-29 — do not mix these up)
+
+- **Dedicated submission account: `PA3W2J1H6I3X`** ("Alpaca Hackathon", $100,000.00 starting
+  balance). **Off-limits — no orders — until Monday Aug 31, 9:30am ET.** This is the only
+  account whose P&L counts toward judging.
+- **Testing account: `PA3V2Y8L0TCX`** ("Paper Trading", the pre-hackathon `0TCX` account
+  referenced throughout the old repo's `CLAUDE.md`). Use this for all development/testing this
+  week — `alpaca profile login --name testing` should point here. Its existing history (the old
+  CVX position, etc.) doesn't matter; it's never used for judging.
+
 ## Why this repo exists (read this first)
 
 The actual prototype for this idea — a Shariah-compliant Alpaca paper-trading agent with a
