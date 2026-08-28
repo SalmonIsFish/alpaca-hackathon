@@ -27,6 +27,12 @@ DEFAULT_POLICY = {
     "max_otm_pct": 7.0,
     "min_premium_per_share": 0.05,
     "max_spread_pct_of_mid": 15.0,
+    # Sizing target, not a hard cap -- the risk gate (MAX_POSITION_PCT) is the hard backstop.
+    # 35%, not something tighter: this universe is $190-500+/share, so 1 contract of a
+    # cash-secured put already costs 20-35% of a $100k account structurally (verified against
+    # real candidates 2026-08-29) -- a tighter target would reject 1-contract trades outright,
+    # not make them safer.
+    "target_position_pct": 35.0,
 }
 
 SHARES_PER_CONTRACT = 100
@@ -145,6 +151,7 @@ def generate_candidates(
     underlying: str,
     *,
     cash_available: float,
+    equity: float,
     policy: dict | None = None,
     profile: str,
 ) -> list[dict]:
@@ -166,17 +173,22 @@ def generate_candidates(
     chain = _snapshots_to_rows(chain_response.get("snapshots", {}))
     ranked, _ = rank_candidates(chain, spot=spot, today=today, policy=policy)
 
+    target_value = equity * (policy["target_position_pct"] / 100)
     sized = []
     for candidate in ranked:
-        contracts = int(cash_available // (candidate["strike"] * SHARES_PER_CONTRACT))
-        if contracts < 1:
-            continue
+        cost_per_contract = candidate["strike"] * SHARES_PER_CONTRACT
+        max_affordable = int(cash_available // cost_per_contract)
+        if max_affordable < 1:
+            continue  # can't afford even 1 contract -- not a candidate at all
+        # size toward the target, but never below 1 (options are integer contracts) and
+        # never above what's actually affordable
+        contracts = max(1, min(max_affordable, int(target_value // cost_per_contract)))
         sized.append(
             {
                 **candidate,
                 "underlying": underlying,
                 "contracts": contracts,
-                "cash_required": contracts * SHARES_PER_CONTRACT * candidate["strike"],
+                "cash_required": contracts * cost_per_contract,
             }
         )
     return sized
@@ -186,6 +198,7 @@ def build_shortlist(
     universe_symbols: list[str],
     *,
     cash_available: float,
+    equity: float,
     policy: dict | None = None,
     profile: str,
     cap: int = 8,
@@ -197,7 +210,11 @@ def build_shortlist(
         try:
             pooled.extend(
                 generate_candidates(
-                    symbol, cash_available=cash_available, policy=policy, profile=profile
+                    symbol,
+                    cash_available=cash_available,
+                    equity=equity,
+                    policy=policy,
+                    profile=profile,
                 )
             )
         except (cli.AlpacaCliError, KeyError, ValueError, TypeError):

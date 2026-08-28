@@ -30,9 +30,10 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     universe = shariah.load_universe(settings.shariah_universe_path)
     symbols = [underlying] if underlying else list(universe)
     cash_available = float(account.get("cash", 0))
+    equity = float(account.get("equity", 0))
 
     shortlist = candidates.build_shortlist(
-        symbols, cash_available=cash_available, profile=active_profile
+        symbols, cash_available=cash_available, equity=equity, profile=active_profile
     )
     if not shortlist:
         return evidence.log_decision(
@@ -40,10 +41,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             path=settings.decisions_log_path,
         )
 
-    account_snapshot = {
-        "cash": cash_available,
-        "equity": float(account.get("equity", 0)),
-    }
+    account_snapshot = {"cash": cash_available, "equity": equity}
     proposal = llm.propose_trade(shortlist, account_snapshot, settings)
 
     if proposal["status"] != "OK":
