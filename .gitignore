@@ -1,0 +1,23 @@
+backend/.env
+.venv/
+__pycache__/
+*.pyc
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/market_data_cache/
+backend/sec_edgar_cache/
+tmp/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+*.orig
+*.rej
