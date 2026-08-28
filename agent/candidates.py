@@ -4,16 +4,17 @@ rank_candidates() is pure (no I/O) -- fixed-input, fixed-output, fully unit-test
 generate_candidates()/build_shortlist() wire it to the live `alpaca data option chain` /
 `alpaca data latest-quote` commands.
 
-NOTE: the exact field names `alpaca data option chain` returns (bid/ask/last-trade keys,
-whether it's `bp`/`ap` Alpaca-snapshot style or something else) have not been verified against
-real authenticated output yet -- the CLI wasn't logged in to any account while this was
-written. _extract_quote() below is a best-effort first pass and is the one thing to re-check
-against real output the moment a profile is authenticated, before trusting generate_candidates
-results.
+Verified against real authenticated output on 2026-08-29 (testing account PA3V2Y8L0TCX):
+`option chain`'s "snapshots" is a DICT keyed by OCC symbol (e.g. "AAPL260902P00205000"), not a
+list, and per-contract entries carry no strike_price/expiration_date fields -- those are only
+encoded in the OCC symbol itself, hence _parse_occ_symbol() below. Quote data lives under
+latestQuote.bp/ap exactly as first guessed. `latest-quote`'s response nests the actual bid/ask
+under a "quote" key, not top-level -- also fixed here after checking real output.
 """
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta
 
 from agent import cli
@@ -31,11 +32,45 @@ DEFAULT_POLICY = {
 SHARES_PER_CONTRACT = 100
 
 
+_OCC_RE = re.compile(r"^(?P<root>[A-Z]+)(?P<date>\d{6})(?P<type>[CP])(?P<strike>\d{8})$")
+
+
+def parse_occ_symbol(symbol: str) -> dict:
+    """AAPL260902P00205000 -> root AAPL, expiration 2026-09-02, type put, strike 205.0."""
+    match = _OCC_RE.match(symbol)
+    if not match:
+        raise ValueError(f"not a recognizable OCC option symbol: {symbol!r}")
+    yy, mm, dd = match["date"][:2], match["date"][2:4], match["date"][4:]
+    expiration_date = f"20{yy}-{mm}-{dd}"
+    strike_price = int(match["strike"]) / 1000
+    option_type = "call" if match["type"] == "C" else "put"
+    return {
+        "root": match["root"],
+        "expiration_date": expiration_date,
+        "type": option_type,
+        "strike_price": strike_price,
+    }
+
+
+def _snapshots_to_rows(snapshots: dict) -> list[dict]:
+    """`option chain`'s "snapshots" is {OCC_symbol: {latestQuote, latestTrade, greeks, ...}}.
+    Flatten into rows carrying symbol/strike/expiration_date alongside the raw snapshot."""
+    rows = []
+    for symbol, snapshot in snapshots.items():
+        try:
+            parsed = parse_occ_symbol(symbol)
+        except ValueError:
+            continue
+        rows.append({"symbol": symbol, **parsed, **snapshot})
+    return rows
+
+
 def _extract_quote(contract: dict) -> tuple[float | None, float | None]:
-    """Best-effort bid/ask extraction -- verify against real `option chain` output."""
-    quote = contract.get("latestQuote") or contract.get("latest_quote") or {}
-    bid = quote.get("bp") or quote.get("bid_price") or quote.get("bid")
-    ask = quote.get("ap") or quote.get("ask_price") or quote.get("ask")
+    """Bid/ask from a flattened chain row's latestQuote -- confirmed against real output:
+    latestQuote.bp / latestQuote.ap."""
+    quote = contract.get("latestQuote") or {}
+    bid = quote.get("bp")
+    ask = quote.get("ap")
     return (float(bid) if bid is not None else None, float(ask) if ask is not None else None)
 
 
@@ -115,8 +150,9 @@ def generate_candidates(
 ) -> list[dict]:
     policy = policy or DEFAULT_POLICY
     today = date.today()
-    quote = cli.latest_quote(underlying, profile=profile)
-    spot = float(quote.get("ap") or quote.get("bp") or quote.get("price"))
+    quote_response = cli.latest_quote(underlying, profile=profile)
+    inner_quote = quote_response.get("quote", {})
+    spot = float(inner_quote.get("ap") or inner_quote.get("bp"))
 
     gte = today.isoformat()
     lte = (today + timedelta(days=policy["max_dte"])).isoformat()
@@ -127,7 +163,7 @@ def generate_candidates(
         expiration_date_lte=lte,
         profile=profile,
     )
-    chain = chain_response.get("snapshots") or chain_response.get("contracts") or []
+    chain = _snapshots_to_rows(chain_response.get("snapshots", {}))
     ranked, _ = rank_candidates(chain, spot=spot, today=today, policy=policy)
 
     sized = []
