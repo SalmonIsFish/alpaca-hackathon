@@ -14,6 +14,50 @@ this file plus `README.md` is everything you need to not re-litigate decisions a
   week — `alpaca profile login --name testing` should point here. Its existing history (the old
   CVX position, etc.) doesn't matter; it's never used for judging.
 
+## Current status (updated 2026-08-29, end of build session — read this first if resuming)
+
+**Milestone 1 achieved and committed.** The full pipeline runs end-to-end against real data on
+the testing account: `python -m agent.pipeline --dry-run` → scans the whole curated universe →
+LLM (Featherless) proposes a candidate with a real rationale → all three gates evaluate it →
+logs to `logs/decisions.jsonl`. Last real run: NVDA 210 put, 1 contract, $21,000 (21% of
+equity), all gates PASS, `WOULD_SUBMIT`.
+
+**What's built and verified against real (not guessed) API output:** `agent/config.py`,
+`agent/cli.py` (Alpaca CLI subprocess wrapper — `doctor`/`account_get`/`position_list` all
+confirmed), `agent/candidates.py` (option-chain parsing fixed twice against real output — see
+git log for the OCC-symbol-parsing and sizing-policy fixes), `agent/gates/{shariah,structure,
+risk}.py` (19/19 unit tests passing), `agent/evidence.py`, `agent/llm.py` (Featherless call
+fixed — see the Cloudflare note below), `agent/pipeline.py`. `data/shariah_universe.json` has
+12 curated large-cap symbols with one-line rationales.
+
+**Two real bugs found and fixed this session, worth knowing about if something looks broken:**
+1. **Featherless returns HTTP 403 / Cloudflare error 1010 with Python's default `urllib`
+   User-Agent** — nothing to do with the API key. Fixed in `llm.py` by setting a real
+   User-Agent header. If any *other* HTTP client gets added later (not just `urllib`), check
+   its default User-Agent isn't bot-blocked the same way.
+2. **Position sizing vs. risk cap conflict**: the curated universe is $190-500+/share, so 1
+   contract of a cash-secured put structurally costs 20-35% of a $100k account. Sizing now
+   targets 35% of equity (usually lands on exactly 1 contract); `MAX_POSITION_PCT=40` is the
+   real backstop (confirmed it still rejects genuinely oversized trades, e.g. a 3-contract
+   93.6%-of-equity case). Don't casually tighten `MAX_POSITION_PCT` back toward 5-10% without
+   re-checking against real strike prices first — it will silently make every trade impossible
+   again, not safer.
+
+**Alpaca CLI is installed** at `C:\Users\G2\bin\alpaca.exe` (v0.0.14, Windows amd64 release
+binary — no Go/Homebrew needed) and on PATH. The `testing` profile is authenticated
+(`alpaca profile login --name testing`, OAuth, pointed at `PA3V2Y8L0TCX`). Featherless is
+configured (`FEATHERLESS_MODEL=Qwen/Qwen3.8-27B` — chosen for cost/quality balance on a small,
+structured proposal task; see git log for the reasoning if reconsidering).
+
+**Not done yet — this is where to resume:**
+- **Milestone 2**: drop `--dry-run` and place one real order on the testing account
+  (`python -m agent.pipeline`, no flag). Paused here deliberately, not blocked on anything.
+- Cron/scheduler wiring (only after Milestone 2).
+- Switching execution to the dedicated account `PA3W2J1H6I3X` — **not before Monday Aug 31,
+  9:30am ET**, and only after Milestone 2 has proven a real order path end-to-end on testing.
+- Hosted status page / Application URL, video/slides/cover image, one-page write-up — all
+  still at 0%.
+
 ## Why this repo exists (read this first)
 
 The actual prototype for this idea — a Shariah-compliant Alpaca paper-trading agent with a
@@ -110,8 +154,11 @@ produce something embarrassing mid-demo.
   risk limits, all fail-closed.
 - Level 1 option structures: sell covered call / sell cash-secured put only, 1–7 DTE, strike near
   4% OTM (2–7% band), standard 100-share multiplier. No multi-leg spreads.
-- Dual Alpaca transport idea: REST directly, and the official `alpaca-mcp-server` via MCP — cover
-  the "MCP or CLI" requirement with the MCP path since that's proven achievable.
+- **Execution transport decided 2026-08-29, superseding the line this replaced: the Alpaca
+  CLI, not MCP.** The official Alpaca Claude Code skills explicitly document MCP as
+  interactive/session-bound and recommend the CLI for unattended/cron automation (`alpaca
+  doctor`, `alpaca data option chain`, `alpaca order submit`, etc.) — this satisfies "MCP
+  server or CLI" and is what's actually implemented in `agent/cli.py`.
 - Config-via-`.env` pattern (`os.getenv`), never hardcoded secrets.
 - Cron-based scheduling is a solved problem in the old repo (it already cron'd a watchlist scan)
   — proves the pattern, re-implement fresh here rather than treating scheduling as a new risk.
@@ -120,16 +167,17 @@ produce something embarrassing mid-demo.
 ## Rebuild scope — what's in, what's cut
 
 **In (build this):**
-- Alpaca REST adapter, paper-only, hardcoded paper host.
-- MCP transport wired for at least the execution step.
-- One Level 1 option structure only (pick one — cash-secured put is simplest to reason about).
+- Alpaca CLI wrapper, paper-only profile, never touches the dedicated account before Monday.
+  ✅ done (`agent/cli.py`).
+- Cash-secured put only. ✅ done (`agent/candidates.py`, `agent/gates/structure.py`).
 - Simplified Shariah screen: a small curated compliant-symbol list, not live SEC EDGAR scraping.
-- Automated risk caps (orders/day, position size, daily loss).
-- A `/explain`-style reasoning trace endpoint or log — this is the evidence trail that stands in
-  for a human watching the decision happen.
+  ✅ done (`data/shariah_universe.json`, `agent/gates/shariah.py`).
+- Automated risk caps (orders/day, position size, daily loss). ✅ done (`agent/gates/risk.py`).
+- A reasoning-trace log — this is the evidence trail that stands in for a human watching the
+  decision happen. ✅ done (`agent/evidence.py`, `logs/decisions.jsonl`).
 - Scheduled/autonomous trigger (cron once the core loop is proven — don't block the first trade
-  on this).
-- Minimal hosted status page for the Application URL requirement.
+  on this). **Not started** — after Milestone 2.
+- Minimal hosted status page for the Application URL requirement. **Not started.**
 
 **Cut (do not attempt this week):**
 - Backup/restore tooling, audit-export CLI, cutover pre-flight — production hardening, not judged.
@@ -140,24 +188,23 @@ produce something embarrassing mid-demo.
 
 ## Rough sequence (corrected 2026-08-29 for the real Monday gate)
 
-1. Create the dedicated $100k account now; create a **separate testing account** for everything
-   below until Monday. Do not place any order on the dedicated account before Mon Aug 31, 9:30am
-   ET — it's explicitly against the written instructions, not just unhelpful.
-2. Alpaca REST adapter + account wiring, developed and tested against the **testing** account.
-3. MCP transport for execution, same testing account.
-4. One option structure, simplified Shariah gate, risk caps — get the full loop working
-   end-to-end on the testing account over the weekend (Fri 8/29 – Sun 8/30).
-5. Wire actual cron scheduling once the manual-trigger version works, still against the testing
-   account.
-6. **Monday Aug 31, 9:30am ET: point execution at the dedicated account and place the first
+1. ✅ Dedicated $100k account (`PA3W2J1H6I3X`) and testing account (`PA3V2Y8L0TCX`) both set up.
+2. ✅ Alpaca CLI wrapper + account wiring, tested against the **testing** account.
+3. ✅ CLI execution transport confirmed working (`order_submit` implemented, not yet called for
+   real — that's Milestone 2).
+4. ✅ One option structure (cash-secured put), simplified Shariah gate, risk caps — full loop
+   proven end-to-end on the testing account (Milestone 1, 2026-08-29).
+5. **Next:** Milestone 2 — one real order on the testing account (drop `--dry-run`).
+6. Then: wire actual cron scheduling.
+7. **Monday Aug 31, 9:30am ET: point execution at the dedicated account and place the first
    trade that counts.** This is the real start line, not kickoff.
-7. Trade through Mon–Thu; keep the reasoning-trace log growing — it's evidence for the
+8. Trade through Mon–Thu; keep the reasoning-trace log growing — it's evidence for the
    "creativity, autonomy, robustness" half of judging, not just a nice-to-have.
-8. Minimal hosted status page live with an Application URL (doesn't need to be a dashboard — UI
+9. Minimal hosted status page live with an Application URL (doesn't need to be a dashboard — UI
    isn't judged).
-9. Freeze broker-facing code a day or two before the deadline; finish video/slides/cover
-   image/one-page write-up.
-10. Submit early — don't wait for Sep 4, 15:00 UTC (= 8:00 AM PDT, confirmed in the doc).
+10. Freeze broker-facing code a day or two before the deadline; finish video/slides/cover
+    image/one-page write-up.
+11. Submit early — don't wait for Sep 4, 15:00 UTC (= 8:00 AM PDT, confirmed in the doc).
 
 ## Open questions (not yet answered — ask if there's another Q&A window)
 
