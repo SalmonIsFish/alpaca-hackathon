@@ -61,7 +61,7 @@ def call_featherless(prompt: str, *, api_key: str, model: str) -> str:
             "User-Agent": "amanah-trader-agent/0.1 (+https://github.com/SalmonIsFish/alpaca-hackathon)",
         },
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=15) as response:
         payload = json.loads(response.read())
     return payload["choices"][0]["message"]["content"]
 

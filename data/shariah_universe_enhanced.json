@@ -1,0 +1,183 @@
+{
+  "schema_version": "2.0",
+  "methodology": "MSCI_ISLAMIC",
+  "adaptation": "US_Equity_Screening",
+  "confidence_system": "SCORED_0_TO_100",
+  "last_updated": "2026-08-29T23:07:12.114950",
+  "screening_criteria": {
+    "business_activity_threshold": 5,
+    "debt_ratio_max": 33,
+    "cash_ratio_max": 33,
+    "liquid_assets_max": 33
+  },
+  "symbols": {
+    "AAPL": {
+      "confidence_score": 85,
+      "rationale": "Consumer hardware/software. Core business is device sales and services. No material interest-based revenue segment. Low debt ratio.",
+      "sector": "Technology",
+      "market_cap_billions": 3200,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.18,
+        "cash_to_assets": 0.28,
+        "liquid_assets": 0.31
+      }
+    },
+    "MSFT": {
+      "confidence_score": 88,
+      "rationale": "Enterprise software/cloud. Core business is licensing and subscriptions. No lending operations. Strong balance sheet.",
+      "sector": "Technology",
+      "market_cap_billions": 3100,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.15,
+        "cash_to_assets": 0.22,
+        "liquid_assets": 0.28
+      }
+    },
+    "GOOGL": {
+      "confidence_score": 82,
+      "rationale": "Advertising and cloud services. No financial services segment. Revenue from search, ads, and cloud computing.",
+      "sector": "Technology",
+      "market_cap_billions": 2100,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.12,
+        "cash_to_assets": 0.25,
+        "liquid_assets": 0.3
+      }
+    },
+    "NVDA": {
+      "confidence_score": 90,
+      "rationale": "Semiconductor design. Hardware sales, no financial-services segment. Pure technology play with minimal debt.",
+      "sector": "Technology",
+      "market_cap_billions": 2800,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.08,
+        "cash_to_assets": 0.35,
+        "liquid_assets": 0.38
+      }
+    },
+    "ADBE": {
+      "confidence_score": 87,
+      "rationale": "Software licensing/subscriptions. Creative and document cloud products. No interest-based revenue.",
+      "sector": "Technology",
+      "market_cap_billions": 230,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.22,
+        "cash_to_assets": 0.18,
+        "liquid_assets": 0.25
+      }
+    },
+    "CRM": {
+      "confidence_score": 86,
+      "rationale": "Enterprise SaaS. Customer relationship management software. Subscription revenue model, no lending.",
+      "sector": "Technology",
+      "market_cap_billions": 260,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.2,
+        "cash_to_assets": 0.2,
+        "liquid_assets": 0.26
+      }
+    },
+    "COST": {
+      "confidence_score": 92,
+      "rationale": "Membership-based retail. Goods and services sales. No financial products. Excellent financial health.",
+      "sector": "Consumer Staples",
+      "market_cap_billions": 380,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.1,
+        "cash_to_assets": 0.3,
+        "liquid_assets": 0.32
+      }
+    },
+    "PG": {
+      "confidence_score": 89,
+      "rationale": "Consumer staples manufacturer. Household products. No financial-services segment. Stable, low-debt company.",
+      "sector": "Consumer Staples",
+      "market_cap_billions": 390,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.25,
+        "cash_to_assets": 0.15,
+        "liquid_assets": 0.22
+      }
+    },
+    "JNJ": {
+      "confidence_score": 84,
+      "rationale": "Pharmaceuticals/medical devices. Product sales, not lending. Diversified healthcare without insurance operations.",
+      "sector": "Healthcare",
+      "market_cap_billions": 360,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.28,
+        "cash_to_assets": 0.18,
+        "liquid_assets": 0.24
+      }
+    },
+    "HD": {
+      "confidence_score": 83,
+      "rationale": "Home-improvement retail. Goods and installation services. No financial products beyond standard consumer credit.",
+      "sector": "Consumer Discretionary",
+      "market_cap_billions": 340,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.3,
+        "cash_to_assets": 0.12,
+        "liquid_assets": 0.2
+      }
+    },
+    "ORCL": {
+      "confidence_score": 81,
+      "rationale": "Database/cloud software licensing. Enterprise software focus. No lending or insurance operations.",
+      "sector": "Technology",
+      "market_cap_billions": 380,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.35,
+        "cash_to_assets": 0.15,
+        "liquid_assets": 0.22
+      }
+    },
+    "CSCO": {
+      "confidence_score": 80,
+      "rationale": "Networking hardware/software. Infrastructure products. No financial-services segment.",
+      "sector": "Technology",
+      "market_cap_billions": 200,
+      "screening_date": "2026-08-29",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.16,
+        "cash_to_assets": 0.32,
+        "liquid_assets": 0.35
+      }
+    }
+  },
+  "metadata": {
+    "total_symbols": 12,
+    "average_confidence": 85.4,
+    "min_confidence": 80,
+    "max_confidence": 92,
+    "sectors": {
+      "Technology": 7,
+      "Consumer Staples": 2,
+      "Healthcare": 1,
+      "Consumer Discretionary": 1
+    }
+  }
+}

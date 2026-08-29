@@ -7,6 +7,9 @@ tmp/
 .pytest_cache/
 *.egg-info/
 
+# Deployment guide contains sensitive server info
+DEPLOYMENT_GUIDE.md
+
 # Runtime evidence log — not committed, generated fresh each run
 logs/*.jsonl
 

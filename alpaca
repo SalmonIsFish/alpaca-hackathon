@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""
+alpaca binary wrapper for server deployment.
+
+This script mimics the Alpaca CLI binary behavior but uses Python
+and direct API calls instead of the Go binary.
+
+Usage:
+    ./alpaca doctor
+    ./alpaca account get
+    ./alpaca position list
+    ./alpaca data latest-quote --symbol AAPL
+    ./alpaca data option chain --underlying-symbol AAPL --type put
+    ./alpaca order submit --symbol AAPL --side sell --qty 1 --type limit --limit-price 100
+"""
+
+import sys
+import os
+
+# Add the hackathon directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from alpaca_cli import main
+
+if __name__ == "__main__":
+    main()

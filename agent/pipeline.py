@@ -10,7 +10,8 @@ from datetime import date
 
 from agent import candidates, cli, evidence, llm
 from agent.config import get_settings
-from agent.gates import risk, shariah, structure
+from agent.gates import risk, structure
+from agent.gates.shariah_enhanced import check_symbol_enhanced, load_enhanced_universe
 
 
 def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None = None) -> dict:
@@ -27,13 +28,14 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     account = cli.account_get(active_profile)
     cli.position_list(active_profile)  # fetched for future position-aware sizing; not yet used
 
-    universe = shariah.load_universe(settings.shariah_universe_path)
-    symbols = [underlying] if underlying else list(universe)
+    universe = load_enhanced_universe(settings.shariah_universe_path)
+    symbols_dict = universe.get("symbols", universe)
+    symbols = [underlying] if underlying else list(symbols_dict)
     cash_available = float(account.get("cash", 0))
     equity = float(account.get("equity", 0))
 
     shortlist = candidates.build_shortlist(
-        symbols, cash_available=cash_available, equity=equity, profile=active_profile
+        symbols, cash_available=cash_available, equity=equity, profile=active_profile, cap=5
     )
     if not shortlist:
         return evidence.log_decision(
@@ -44,17 +46,18 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     account_snapshot = {"cash": cash_available, "equity": equity}
     proposal = llm.propose_trade(shortlist, account_snapshot, settings)
 
+    # Deterministic fallback: if LLM is down/slow, still trade the top-ranked
+    # candidate. The gates remain the hard safety net — LLM only proposes.
+    fallback_used = False
     if proposal["status"] != "OK":
-        return evidence.log_decision(
-            {
-                "outcome": proposal["status"],
-                "candidates_considered": len(shortlist),
-                "detail": proposal,
-            },
-            path=settings.decisions_log_path,
-        )
-
-    if proposal.get("no_trade"):
+        fallback_used = True
+        proposal = {
+            "status": "OK",
+            "no_trade": False,
+            "selected_index": 0,
+            "rationale": f"Fallback: LLM {proposal['status']} — selected top-ranked candidate deterministically.",
+        }
+    elif proposal.get("no_trade"):
         return evidence.log_decision(
             {
                 "outcome": "NO_TRADE_LLM_DECLINED",
@@ -70,7 +73,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     orders_today = sum(1 for d in today_decisions if d.get("outcome") == "SUBMITTED")
 
     gate_results = {
-        "shariah": shariah.check_symbol(selected["underlying"], universe),
+        "shariah": check_symbol_enhanced(selected["underlying"], universe),
         "structure": structure.check_cash_secured_put(
             cash_collateral=cash_available,
             strike=selected["strike"],
@@ -94,6 +97,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
         "llm_rationale": proposal.get("rationale", ""),
         "selected": selected,
         "gate_results": gate_results,
+        "llm_fallback": fallback_used,
     }
 
     if not all(g["status"] == "PASS" for g in gate_results.values()):

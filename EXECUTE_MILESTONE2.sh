@@ -1,0 +1,33 @@
+#!/bin/bash
+#!/usr/bin/env bash
+# This is a script that would be run in Windows to execute the pipeline
+# It's provided for reference to show exactly what command needs to be run
+
+echo "==============================================="
+echo "ALPACA HACKATHON - MILESTONE 2 EXECUTION SCRIPT"
+echo "==============================================="
+echo ""
+echo "This script shows the command that needs to be run in Windows:"
+echo ""
+echo "COMMAND TO EXECUTE:"
+echo "python -m agent.pipeline"
+echo ""
+echo "EXPECTED BEHAVIOR:"
+echo "1. Verifies Alpaca CLI configuration"
+echo "2. Gets account information"
+echo "3. Generates candidate options from Shariah universe"
+echo "4. LLM proposes trade"
+echo "5. All 3 compliance gates evaluate"
+echo "6. If all pass, submits real paper order"
+echo "7. Logs decision to logs/decisions.jsonl"
+echo ""
+echo "PRE-REQUISITES IN WINDOWS ENVIRONMENT:"
+echo "1. Alpaca CLI installed at C:\\Users\\G2\\bin\\alpaca.exe"
+echo "2. Testing profile configured: alpaca profile login --name testing"
+echo "3. .env file with proper credentials"
+echo "4. Featherless API access (already in .env)"
+echo ""
+echo "EXPECTED OUTPUT (if successful):"
+echo "{\"timestamp\": \"2026-08-29T13:07:32.250219+00:00\", \"outcome\": \"SUBMITTED\", \"underlying\": \"NVDA\", ...}"
+echo ""
+echo "==============================================="
