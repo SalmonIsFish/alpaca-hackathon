@@ -49,3 +49,17 @@ hasn't been run yet. After that, cron wiring is next (see `BUILD_PLAN.md`'s sequ
 - Keep changes scoped and simple — this is a solo hackathon build against a hard deadline
   (Sep 4, 2026, 15:00 UTC), not a production system. Don't add abstractions, providers, or
   config for anything not immediately needed.
+
+## Agent skills
+
+### Issue tracker
+
+Issues tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical labels mapped 1:1 (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (one `CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.

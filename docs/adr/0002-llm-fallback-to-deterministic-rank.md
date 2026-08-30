@@ -1,0 +1,3 @@
+# LLM fallback to deterministic rank on invalid response
+
+The Proposer (Featherless `Qwen/Qwen3.8-27B` behind Cloudflare) can return `LLM_INVALID_RESPONSE` (empty body, 403, timeout after 15s). Rather than stall the autonomous run, we fall back to `selected_index=0` (top-ranked Candidate from the Ranker) with a synthetic rationale. The Gates remain the hard safety net — the fallback preserves autonomy without bypassing compliance, because every Candidate is already code-verified and gate-checked. The alternative (require LLM success) would halt trading on transient LLM failure and violate the autonomy requirement.

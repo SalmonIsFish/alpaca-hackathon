@@ -1,0 +1,3 @@
+# Rule-based Quant Agent over learned model
+
+Over a 5-day build and a 4-session scored window (Mon Aug 31 09:30 ET → Thu Sep 3 EOD per official FAQ `13XWsMvW3mFm26xGlBLvdzzJ_eZQ33T4ZrP-vd9eat50`), a learned quant model cannot be trained, backtested, and proven without overclaim. We kept the Quant Agent as a deterministic yield-ranker (`rank_candidates`: 1–7 DTE, 2–7% OTM, spread ≤12%, sorted by premium yield vs distance to target OTM 4.2%) plus the same fail-closed Gates. This is intentionally auditable — judges can grep `logs/decisions.jsonl` — and matches the FAQ allowance to include simulated backtests/shocks as *additional evidence* in the write-up, not scored P&L. A learned model is explicitly Next Step, not claimed as done.

@@ -22,11 +22,11 @@ from agent import cli
 DEFAULT_POLICY = {
     "min_dte": 1,
     "max_dte": 7,
-    "target_otm_pct": 4.0,
+    "target_otm_pct": 4.2,
     "min_otm_pct": 2.0,
     "max_otm_pct": 7.0,
     "min_premium_per_share": 0.05,
-    "max_spread_pct_of_mid": 15.0,
+    "max_spread_pct_of_mid": 12.0,
     # Sizing target, not a hard cap -- the risk gate (MAX_POSITION_PCT) is the hard backstop.
     # 35%, not something tighter: this universe is $190-500+/share, so 1 contract of a
     # cash-secured put already costs 20-35% of a $100k account structurally (verified against
