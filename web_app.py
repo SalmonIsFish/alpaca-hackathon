@@ -76,6 +76,7 @@ def market_status():
 
 
 ACC_START_EQUITY = 100000.0
+OFFICIAL_START = "2026-08-31T13:30:00+00:00"  # Mon 09:30 ET P&L window - pre-judging hidden
 
 # Last known good account data. On a transient Alpaca/CLI error we serve this
 # instead of zeros, so the dashboard never flashes $0.00 during a hiccup.
@@ -179,6 +180,9 @@ def get_recent_decisions(limit=10):
                 else:
                     css_class = 'rejected'
 
+                # hide pre-official decisions from audit trail UI (file retains them)
+                if data.get('timestamp','') < OFFICIAL_START:
+                    continue
                 decision = {
                     'timestamp': data.get('timestamp', 'N/A'),
                     'outcome': outcome,
