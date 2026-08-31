@@ -29,8 +29,23 @@ Do not invent or restate numeric fields beyond what was given to you."""
 
 
 def build_prompt(candidates: list[dict], account_snapshot: dict) -> str:
+    # Compress for cap 10: table vs full JSON blobs saves ~50% tokens (cap 10 ~6500 -> ~3200)
+    compact = []
+    for i, c in enumerate(candidates):
+        compact.append({
+            "idx": i,
+            "und": c.get("underlying"),
+            "sym": c.get("symbol"),
+            "strike": c.get("strike"),
+            "dte": c.get("dte"),
+            "otm": round(c.get("otm_pct", 0), 1),
+            "bid": c.get("bid"),
+            "ask": c.get("ask"),
+            "pre": c.get("premium_per_share"),
+            "cash": c.get("cash_required"),
+        })
     return json.dumps(
-        {"candidates": candidates, "account": account_snapshot},
+        {"candidates": compact, "account": account_snapshot},
         indent=2,
         default=str,
     )

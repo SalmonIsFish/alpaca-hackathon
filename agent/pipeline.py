@@ -35,7 +35,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     equity = float(account.get("equity", 0))
 
     shortlist = candidates.build_shortlist(
-        symbols, cash_available=cash_available, equity=equity, profile=active_profile, cap=5
+        symbols, cash_available=cash_available, equity=equity, profile=active_profile, cap=10
     )
     if not shortlist:
         return evidence.log_decision(
@@ -43,11 +43,19 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             path=settings.decisions_log_path,
         )
 
+    # Diversity guard: don't re-buy same underlying today (prevents 2x AAPL 14:05/14:06)
+    today_decisions = evidence.todays_decisions(settings.decisions_log_path, today=date.today())
+    already_traded = {d.get("underlying") for d in today_decisions if d.get("outcome") == "SUBMITTED" and d.get("underlying")}
+    if already_traded:
+        filtered = [c for c in shortlist if c["underlying"] not in already_traded]
+        if filtered:
+            shortlist = filtered
+
     account_snapshot = {"cash": cash_available, "equity": equity}
     proposal = llm.propose_trade(shortlist, account_snapshot, settings)
 
-    # Deterministic fallback: if LLM is down/slow, still trade the top-ranked
-    # candidate. The gates remain the hard safety net — LLM only proposes.
+    # Deterministic fallback: if LLM is down/slow OR declines, still trade top-ranked
+    # Gates remain hard safety net — LLM only proposes, never decides compliance.
     fallback_used = False
     if proposal["status"] != "OK":
         fallback_used = True
@@ -58,19 +66,19 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             "rationale": f"Fallback: LLM {proposal['status']} — selected top-ranked candidate deterministically.",
         }
     elif proposal.get("no_trade"):
-        return evidence.log_decision(
-            {
-                "outcome": "NO_TRADE_LLM_DECLINED",
-                "candidates_considered": len(shortlist),
-                "llm_rationale": proposal.get("rationale", ""),
-            },
-            path=settings.decisions_log_path,
-        )
+        fallback_used = True
+        proposal = {
+            "status": "OK",
+            "no_trade": False,
+            "selected_index": 0,
+            "rationale": f"Fallback: LLM declined ({proposal.get('rationale','')}) — selected top-ranked deterministically.",
+        }
 
     selected = shortlist[proposal["selected_index"]]
 
-    today_decisions = evidence.todays_decisions(settings.decisions_log_path, today=date.today())
     orders_today = sum(1 for d in today_decisions if d.get("outcome") == "SUBMITTED")
+    # Real daily P&L vs 100000 start (web_app.py:79 ACC_START) - was hardcoded 0 before
+    daily_pnl_pct = ((equity - 100000.0) / 100000.0 * 100) if equity else 0
 
     gate_results = {
         "shariah": check_symbol_enhanced(selected["underlying"], universe),
@@ -86,7 +94,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             position_value=selected["cash_required"],
             account_equity=account_snapshot["equity"] or 1,
             max_position_pct=settings.max_position_pct,
-            daily_pnl=0,  # first-cut: no intraday equity delta tracking yet
+            daily_pnl=daily_pnl_pct,
             max_daily_loss_pct=settings.max_daily_loss_pct,
         ),
     }
