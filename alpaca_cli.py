@@ -182,9 +182,22 @@ class AlpacaPythonCli:
         expiration_date_gte: str = None,
         expiration_date_lte: str = None,
     ) -> dict:
-        """Get option chain."""
-        url = f"{self.data_url}/v1/options/snapshots/{underlying}"
-        return self._api_request(url)
+        """Get option chain. Paginates 4 pages to reach 1-7 DTE."""
+        all_snapshots = {}
+        page_token = None
+        for _ in range(4):
+            url = f"{self.data_url}/v1beta1/options/snapshots/{underlying}?limit=100"
+            if page_token:
+                import urllib.parse
+                url += f"&page_token={urllib.parse.quote(page_token)}"
+            resp = self._api_request(url)
+            if not isinstance(resp, dict) or "snapshots" not in resp:
+                break
+            all_snapshots.update(resp.get("snapshots", {}))
+            page_token = resp.get("next_page_token")
+            if not page_token:
+                break
+        return {"snapshots": all_snapshots}
     
     def order_submit(
         self,
@@ -282,6 +295,9 @@ def main():
             else:
                 i += 1
         
+        if 'type' in kwargs:
+            kwargs['order_type'] = kwargs.pop('type')
+        kwargs.pop('profile', None)
         result = cli.order_submit(**kwargs)
         print(json.dumps(result, indent=2))
     

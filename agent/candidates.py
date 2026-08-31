@@ -22,11 +22,11 @@ from agent import cli
 DEFAULT_POLICY = {
     "min_dte": 1,
     "max_dte": 7,
-    "target_otm_pct": 4.2,
+    "target_otm_pct": 4.0,
     "min_otm_pct": 2.0,
     "max_otm_pct": 7.0,
     "min_premium_per_share": 0.05,
-    "max_spread_pct_of_mid": 12.0,
+    "max_spread_pct_of_mid": 15.0,
     # Sizing target, not a hard cap -- the risk gate (MAX_POSITION_PCT) is the hard backstop.
     # 35%, not something tighter: this universe is $190-500+/share, so 1 contract of a
     # cash-secured put already costs 20-35% of a $100k account structurally (verified against
@@ -171,6 +171,7 @@ def generate_candidates(
         profile=profile,
     )
     chain = _snapshots_to_rows(chain_response.get("snapshots", {}))
+    chain = [r for r in chain if r.get("type") == "put"]  # cash-secured puts only
     ranked, _ = rank_candidates(chain, spot=spot, today=today, policy=policy)
 
     target_value = equity * (policy["target_position_pct"] / 100)
