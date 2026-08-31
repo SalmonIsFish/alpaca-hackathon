@@ -58,12 +58,13 @@ binary — no Go/Homebrew needed) and on PATH. The `testing` profile is authenti
 configured (`FEATHERLESS_MODEL=Qwen/Qwen3.8-27B` — chosen for cost/quality balance on a small,
 structured proposal task; see git log for the reasoning if reconsidering).
 
-**Not done yet — this is where to resume (post-close, Tue 04:00+08):**
-- **Cap 10**: raise `agent/pipeline.py:37` `cap 5 -> 10` per user, keep `agent/candidates.py:22` `OTM/spread` as is (quant: 10 shortlist = `~6k` chars > `15s` LLM timeout - compress prompt, test `Qwen/Qwen3.8-27B` with cap 10 dry-runs). Add diversity: skip `underlying` already `SUBMITTED` today (max `3` `MAX_ORDERS_PER_DAY`).
-- **Nightly report**: new `agent/report.py` parsing `logs/decisions.jsonl` -> `stats` `NO_CANDIDATES`/`LLM_INVALID`/`rejected_*` + `P&L` vs premium, so quant/LLM know what to tune without guessing.
-- **Fallback**: `agent/pipeline.py:52` if `proposal.no_trade` then fallback to `shortlist[0]` (like `LLM_INVALID` fallback) - avoids `13:51:23` stall.
-- **Milestone 2 was done** `2026-08-30` on `PA3V2Y8L0TCX` (`bdccffce` NVDA) and now `2026-08-31` on `PA3W2J1H6I3X` (`97376869` AAPL). Scheduler wiring done `hackathon-scheduler.service` ET-aware, but re-test after cap change.
-- Hosted status page live `https://amanahtrader.uk/hackathon/` (filter `OFFICIAL_START` done), video/slides/cover image, one-page write-up — still at skeleton.
+**Done 2026-08-31 14:52 UTC (1732188 live):** cap `10` `agent/pipeline.py:37`, diversity guard `pipeline.py:46` skip same `underlying` today, `NO_TRADE` fallback `pipeline.py:68` like `LLM_INVALID`, `agent/llm.py:31` compressed table, `agent/report.py` nightly, verified `GOOGL 325P` dry-run `4` candidates. `PA3W2J1H6I3X` live `2x AAPL` `97376869`, scheduler `active`.
+
+**Not done yet — this is where to resume (next session, use prompt below - verify only, don't re-patch):**
+- Verify `alpaca_cli.py:183` `v1beta1` `4` pages still `300+` snapshots not `100` (`bb32f31`): `python -c "cli.option_chain('NVDA'...)"`
+- Verify `agent/candidates.py:174` `put-only` and `web_app.py:79` `OFFICIAL_START` filter stays - `curl api/decisions?limit=15` should be `10` official only
+- **After 16:00 ET = 04:00 +08 only** `scp pipeline/llm/report` if changed + `sudo systemctl restart hackathon-scheduler` (market closed safe); before close `--dry-run` only, never live on `PA3V2Y8L0TCX`
+- Hosted status page live `https://amanahtrader.uk/hackathon/` (filter done), video/slides/cover image, one-page write-up — still at skeleton (top-3 needs these `FINAL_SUBMISSION_CHECKLIST.md:254`).
 
 ## Why this repo exists (read this first)
 
