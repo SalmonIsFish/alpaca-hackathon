@@ -14,9 +14,18 @@ this file plus `README.md` is everything you need to not re-litigate decisions a
   week — `alpaca profile login --name testing` should point here. Its existing history (the old
   CVX position, etc.) doesn't matter; it's never used for judging.
 
-## Current status (updated 2026-08-29, end of build session — read this first if resuming)
+## Current status (updated 2026-08-31 14:06 UTC, post-Monday open — read this first if resuming)
 
-**Milestone 1 achieved and committed.** The full pipeline runs end-to-end against real data on
+**Mon 09:30 ET P&L window LIVE on `PA3W2J1H6I3X`.** First judged fills: `AAPL260904P00307500` 307.5P 4 DTE 2.8% OTM `1ct` `filled 0.70` at `2026-08-31T14:05:17Z` (order `97376869-4e42`) + duplicate `14:06:41` (2ct total, `61.5k` collateral), equity `99982` (`-0.02%`), cash `100069`, `PA3W2J1H6I3X` `buying_power 277k`. Scheduler + app `active` `https://amanahtrader.uk/hackathon/` shows `PA3W2J1H6I3X` only after `web_app.py:79` `OFFICIAL_START` filter.
+
+**3 fixes shipped at open (commit `bb32f31`):**
+1. `alpaca_cli.py:183` paginate 4 pages `v1beta1` - page 0 is all `2026-08-31` DTE 0, need p1-2 for `1-7 DTE` (was `NO_CANDIDATES` for 12 symbols)
+2. `agent/candidates.py:174` filter `type==put` only + `alpaca_cli.py:298` `type->order_type` + `profile` pop (was calls selected, `TypeError: profile`)
+3. `agent/gates/*` still 19/19, `data/shariah_universe.json` 12 symbols, `web_app.py:79` audit hides pre-`13:30Z` testing rows
+
+**Next session plan (after 16:00 ET = 04:00 +08 Tue):** cap `10` candidates per `agent/pipeline.py:37` (user request, keep even though prompt risk), add diversity guard (skip same `underlying` if already `SUBMITTED` today), add `NO_TRADE_LLM_DECLINED` fallback to top-ranked, and nightly `agent/report.py` (see below). Do NOT change `MAX_POSITION_PCT 40` or gates.
+
+**Milestone 1 achieved and committed (2026-08-29).** The full pipeline runs end-to-end against real data on
 the testing account: `python -m agent.pipeline --dry-run` → scans the whole curated universe →
 LLM (Featherless) proposes a candidate with a real rationale → all three gates evaluate it →
 logs to `logs/decisions.jsonl`. Last real run: NVDA 210 put, 1 contract, $21,000 (21% of
@@ -49,14 +58,12 @@ binary — no Go/Homebrew needed) and on PATH. The `testing` profile is authenti
 configured (`FEATHERLESS_MODEL=Qwen/Qwen3.8-27B` — chosen for cost/quality balance on a small,
 structured proposal task; see git log for the reasoning if reconsidering).
 
-**Not done yet — this is where to resume:**
-- **Milestone 2**: drop `--dry-run` and place one real order on the testing account
-  (`python -m agent.pipeline`, no flag). Paused here deliberately, not blocked on anything.
-- Cron/scheduler wiring (only after Milestone 2).
-- Switching execution to the dedicated account `PA3W2J1H6I3X` — **not before Monday Aug 31,
-  9:30am ET**, and only after Milestone 2 has proven a real order path end-to-end on testing.
-- Hosted status page / Application URL, video/slides/cover image, one-page write-up — all
-  still at 0%.
+**Not done yet — this is where to resume (post-close, Tue 04:00+08):**
+- **Cap 10**: raise `agent/pipeline.py:37` `cap 5 -> 10` per user, keep `agent/candidates.py:22` `OTM/spread` as is (quant: 10 shortlist = `~6k` chars > `15s` LLM timeout - compress prompt, test `Qwen/Qwen3.8-27B` with cap 10 dry-runs). Add diversity: skip `underlying` already `SUBMITTED` today (max `3` `MAX_ORDERS_PER_DAY`).
+- **Nightly report**: new `agent/report.py` parsing `logs/decisions.jsonl` -> `stats` `NO_CANDIDATES`/`LLM_INVALID`/`rejected_*` + `P&L` vs premium, so quant/LLM know what to tune without guessing.
+- **Fallback**: `agent/pipeline.py:52` if `proposal.no_trade` then fallback to `shortlist[0]` (like `LLM_INVALID` fallback) - avoids `13:51:23` stall.
+- **Milestone 2 was done** `2026-08-30` on `PA3V2Y8L0TCX` (`bdccffce` NVDA) and now `2026-08-31` on `PA3W2J1H6I3X` (`97376869` AAPL). Scheduler wiring done `hackathon-scheduler.service` ET-aware, but re-test after cap change.
+- Hosted status page live `https://amanahtrader.uk/hackathon/` (filter `OFFICIAL_START` done), video/slides/cover image, one-page write-up — still at skeleton.
 
 ## Why this repo exists (read this first)
 
