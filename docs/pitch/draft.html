@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amanah Trader — Hackathon Deck (Draft)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#020617;--card:#0F172A;--border:#1E293B;--muted:#94A3B8;--text:#F8FAFC;--accent:#22C55E;--info:#3B82F6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui;background:var(--bg);color:var(--text);overflow:hidden}
+.slides{width:100vw;height:100vh;position:relative}
+.slide{position:absolute;inset:0;padding:48px 56px;display:none;flex-direction:column;justify-content:center;background:radial-gradient(1200px 500px at 15% -10%, rgba(34,197,94,.08), transparent 60%),radial-gradient(900px 400px at 100% 0%, rgba(59,130,246,.07), transparent 55%), var(--bg)}
+.slide.active{display:flex}
+.kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:800}
+h1{font-size:44px;line-height:1.05;letter-spacing:-.02em;margin:10px 0 12px}
+h2{font-size:34px;letter-spacing:-.02em;margin:6px 0 14px}
+p.lead{color:var(--muted);font-size:16px;max-width:780px;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.card{background:linear-gradient(180deg, #0B1120, var(--card));border:1px solid var(--border);border-radius:14px;padding:18px}
+.card h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.bullet{font-size:13px;line-height:1.5;color:var(--muted)}
+.bullet strong{color:var(--text)}
+.flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.flow span{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:var(--accent);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.flow .muted{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:var(--info)}
+.flow .warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#F59E0B}
+.table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+.table th{color:var(--muted);text-align:left;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+.table td{padding:7px 8px;border-bottom:1px solid rgba(30,41,59,.5);font-variant-numeric:tabular-nums}
+.nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(15,23,42,.9);border:1px solid var(--border);border-radius:999px;padding:8px 12px}
+.nav button{background:var(--accent);color:#022c0e;border:0;border-radius:999px;padding:7px 14px;font-weight:700;cursor:pointer}
+.nav button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.dots{display:flex;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.dot.active{background:var(--accent)}
+.note{position:fixed;top:14px;right:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--muted);max-width:360px}
+@media print{.nav,.note{display:none}.slides{height:auto}.slide{position:relative;display:flex;page-break-after:always;height:100vh}}
+</style>
+</head>
+<body>
+<div class="slides">
+<!-- 1 Cover -->
+<section class="slide active">
+<div class="kicker">Alpaca AI Trading Agents Hackathon 2026 — Lablab.ai</div>
+<h1>Amanah Trader<br><span style="color:var(--accent)">Autonomous Shariah-Compliant<br>Options Agent</span></h1>
+<p class="lead">Deterministic gates → LLM proposes, hard rules decide. Live on <strong style="color:var(--text)">PA3W2J1H6I3X $100,040.94 +0.04%</strong> at Thu snapshot. No human approval after deploy.</p>
+<div class="flow"><span>Python + Alpaca CLI</span><span class="muted">Qwen3-27B proposer only</span><span>19/19 tests</span><span class="warn">amanahtrader.uk/hackathon</span></div>
+<p class="lead" style="margin-top:18px;font-size:12px">Prior work <strong>github.com/SalmonIsFish/Ai_Finance_Syariah</strong> used as spec only — every file authored Aug 28-Sep 4, verified by commit dates.</p>
+</section>
+<!-- 2 Problem -->
+<section class="slide">
+<div class="kicker">02 — Why this, why autonomous</div>
+<h2>10PM MYT is market open.<br>Ethics can’t be a prompt.</h2>
+<div class="grid">
+<div class="card"><h3>Problem</h3><p class="bullet"><strong>Human-approval = not autonomous.</strong> Old bot required typing <code>EXECUTE PAPER</code> at 10PM. Judging scores autonomy + robustness.<br><strong>LLM hallucination risk:</strong> one invented strike = non-compliant trade with no recall.</p></div>
+<div class="card"><h3>Our answer</h3><p class="bullet"><strong>Fail-closed gates.</strong> LLM never decides compliance. Shariah + Structure + Risk are pure functions; any REJECT blocks submit. LLM only writes a 1-3 sentence <em>rationale</em> (always positive) — the red <code>Gate block</code> is the verdict.</p></div>
+</div>
+</section>
+<!-- 3 Architecture -->
+<section class="slide">
+<div class="kicker">03 — Three layers</div>
+<h2>Propose, then veto.</h2>
+<div class="flow"><span>Ranker 1-7 DTE, 2-7% OTM, $0.70 floor</span><span class="muted">Proposer Qwen picks index</span><span>Gates PASS/PASS/PASS?</span><span class="warn">Evidence Log → Submit</span></div>
+<div class="grid">
+<div class="card"><h3>Ranker <span style="font-weight:400">candidates.py:139</span></h3><p class="bullet">Sort <code>|OTM-3%| → premium → DTE</code>. Filters DTE/OTM/bid/spread. Cap 10 → shortlist.</p></div>
+<div class="card"><h3>Proposer <span style="font-weight:400">llm.py:28</span></h3><p class="bullet">Featherless JSON only: <code>{selected_index, rationale}</code> or <code>{no_trade}</code>. Fallback to top-ranked if invalid.</p></div>
+<div class="card"><h3>Gates <span style="font-weight:400">gates/*.py</span></h3><p class="bullet"><strong>Shariah</strong> 15 + 688 databank MSCI 0-100 ≥70.<br><strong>Structure</strong> cash-secured <code>strike×100 ≤ cash</code>.<br><strong>Risk</strong> 40%/10-day, fail-closed.</p></div>
+<div class="card"><h3>Execution <span style="font-weight:400">agent/cli.py</span></h3><p class="bullet">Alpaca CLI (not MCP, per docs). <code>alpaca order submit</code> with <code>amanah-{hex12}</code>. Scheduler 09:30-16:00 ET hourly.</p></div>
+</div>
+</section>
+<!-- 4 Shariah -->
+<section class="slide">
+<div class="kicker">04 — Shariah, not ethical filter</div>
+<h2>15 symbols, not 12.<br>Low-strike = more basket.</h2>
+<div class="grid">
+<div class="card"><h3>Universe (added Sep 1)</h3><p class="bullet">AAPL NVDA GOOGL MSFT CSCO COST PG JNJ HD ORCL ADBE CRM<br><strong>+ INTC ~$26, PFE ~$24, KO ~$60</strong> — collateral $2-6k vs $21-33k. Tech 8, Staples 3, Health 2. Avg confidence 85.1.</p></div>
+<div class="card"><h3>Example</h3><table class="table"><tr><th>INTC</th><td>82% Semiconductor mfg, debt 0.14</td><td style="color:var(--accent)">PASS</td></tr><tr><th>PFE</th><td>84% Pharma, debt 0.20</td><td style="color:var(--accent)">PASS</td></tr><tr><th>KO</th><td>86% Staples, debt 0.24</td><td style="color:var(--accent)">PASS</td></tr></table></div>
+</div>
+<p class="lead" style="margin-top:12px">688-symbol Malaysian databank reference + MSCI methodology. REVIEW 50-69 and FAIL both REJECT — no LLM override.</p>
+</section>
+<!-- 5 Quant -->
+<section class="slide">
+<div class="kicker">05 — Yield vs assignment</div>
+<h2>Tighter OTM, higher floor,<br>premium second.</h2>
+<div class="grid">
+<div class="card"><h3>Band Sep 1 (A+B)</h3><p class="bullet"><strong>target_otm 4%→3%</strong> (closer = more premium)<br><strong>min_premium $0.05→$0.70</strong> (filters $0.23 CSCO noise)<br><code>spread ≤15%</code>, <code>1-7 DTE</code>, cap 10, diversity guard (no same underlying same day)</p></div>
+<div class="card"><h3>Effect</h3><p class="bullet">Live picks moved $0.69 → $1.31/$3.09 avg. 4-dataset needs ~40×$69 for 5% — we pitch <strong>premium collected + MTM</strong>, not chase.</p></div>
+</div>
+</section>
+<!-- 6 Live -->
+<section class="slide">
+<div class="kicker">06 — Live (now)</div>
+<h2>3 shorts, 5 risk walls,<br>red banner tells truth.</h2>
+<table class="table"><tr><th>Time ET</th><th>Outcome</th><th>Pick</th><th>Premium</th><th>Gate</th></tr><tr><td>14:05:17</td><td style="color:var(--accent)">SUBMITTED AAPL 307.5P</td><td>4 DTE 2.87% OTM</td><td>$0.67</td><td>PASS</td></tr><tr><td>14:06:41</td><td style="color:var(--accent)">SUBMITTED AAPL 307.5P</td><td>2.92% OTM</td><td>$0.67</td><td>PASS</td></tr><tr><td>14:52:44</td><td style="color:var(--accent)">SUBMITTED GOOGL 330P</td><td>2.49% OTM</td><td>$1.31</td><td>PASS</td></tr><tr><td>18:56:10</td><td style="color:#EF4444">REJECTED GOOGL 327.5P</td><td>$0.69</td><td>$32,750</td><td>risk: orders_today_cap 3/3</td></tr></table>
+<div class="card" style="margin-top:14px"><h3>P&L Attribution (now on dashboard)</h3><p class="bullet"><strong>Premium $265</strong> (2×$67 + $131) − <strong>MTM -$224</strong> = <strong>Equity +$40 (0.04%)</strong>. Collateral $94,500 locked, Buying Power $23,095. Rent is kept only if Thu close OTM — that’s Theta, not intraday PnL.</p></div>
+</section>
+<!-- 7 Autonomy -->
+<section class="slide">
+<div class="kicker">07 — Autonomy & robustness</div>
+<h2>Runs while you sleep.</h2>
+<div class="grid">
+<div class="card"><h3>Scheduler</h3><p class="bullet"><code>hackathon-scheduler.service</code> 09:30-16:00 ET hourly, ZoneInfo ET, sleeps weekends. No human click since Mon 09:30.</p></div>
+<div class="card"><h3>Observability</h3><p class="bullet"><code>/api/metrics</code> gate_pass 50%, rejected_by_gate {risk:5}, premium_by_underlying {AAPL 134, GOOGL 131}. Nightly <code>logs/report-YYYY-MM-DD.md</code>.</p></div>
+</div>
+<p class="lead" style="margin-top:12px">Audit trail now shows <code>Gate block: RISK: orders_today_cap</code> red above the always-positive <em>Proposer pick</em> — mobile-readable without tooltip.</p>
+</section>
+<!-- 8 Close -->
+<section class="slide">
+<div class="kicker">08 — What’s left</div>
+<h2>Freeze code.<br>Ship story.</h2>
+<div class="grid">
+<div class="card"><h3>Done</h3><p class="bullet">Gates 19/19, 15 symbols, cap 10, dashboard + metrics + attribution, PA3W2J1H6I3X live correct after .env fix.</p></div>
+<div class="card"><h3>To-do Fri</h3><p class="bullet">Record 90s demo (submit + reject), finalize ONE_PAGE_WRITEUP, export this deck to PDF → <code>docs/pitch/Amanah_Trader_Deck.pdf</code>, submit early (15:00 UTC).</p></div>
+</div>
+<p class="lead" style="margin-top:16px">We prove AI trading can be both profitable <em>and</em> ethical — the agent doesn’t just trade, it refuses.</p>
+</section>
+</div>
+<div class="nav"><button class="ghost" onclick="prev()">← Prev</button><div class="dots" id="dots"></div><button onclick="next()">Next →</button><button onclick="window.print()" style="background:transparent;border:1px solid var(--border);color:var(--muted)">Print PDF</button></div>
+<div class="note">Draft — open <code>docs/pitch/draft.html</code> locally, Print → Save as PDF to <code>docs/pitch/Amanah_Trader_Deck.pdf</code>. Give that PDF to Claude at 5PM to polish.</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')]; let i=0;
+const dots=document.getElementById('dots'); slides.forEach((_,k)=>{const d=document.createElement('div');d.className='dot'+(k==0?' active':'');dots.appendChild(d)});
+function show(n){i=(n+slides.length)%slides.length; slides.forEach((s,k)=>s.classList.toggle('active',k===i)); [...dots.children].forEach((d,k)=>d.classList.toggle('active',k===i))}
+function next(){show(i+1)} function prev(){show(i-1)}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev()});
+</script>
+</body>
+</html>

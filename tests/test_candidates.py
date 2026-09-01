@@ -46,16 +46,16 @@ def test_rejects_premium_below_floor():
 
 
 def test_rejects_wide_spread():
-    # mid = 0.30, spread = (0.5-0.1)/0.30 = 133% >> 15% cap
-    chain = [_row(strike=190, dte=5, bid=0.1, ask=0.5)]
+    # mid 1.00, spread 40% >>15% cap, bid 0.80 passes premium 0.70 floor
+    chain = [_row(strike=190, dte=5, bid=0.80, ask=1.20)]
     eligible, rejected = rank_candidates(chain, spot=SPOT, today=TODAY, policy=DEFAULT_POLICY)
     assert eligible == []
     assert rejected["spread_too_wide"] == 1
 
 
 def test_accepts_eligible_candidate():
-    # strike 192 -> 4% OTM exactly, within DTE window, live bid, tight spread
-    chain = [_row(strike=192, dte=5, bid=0.5, ask=0.53)]
+    # strike 192 -> 4% OTM exactly, within DTE window, live bid, tight spread, passes 0.70 floor
+    chain = [_row(strike=192, dte=5, bid=0.80, ask=0.84)]
     eligible, rejected = rank_candidates(chain, spot=SPOT, today=TODAY, policy=DEFAULT_POLICY)
     assert len(eligible) == 1
     assert eligible[0]["strike"] == 192
@@ -63,11 +63,11 @@ def test_accepts_eligible_candidate():
 
 
 def test_deterministic_tie_break_ordering():
-    # Two candidates equally close to target OTM (4%) -- 190 (5% OTM) and 194 (3% OTM) are
+    # Two candidates equally close to target OTM (3%) -- 190 (5% OTM) and 194 (3% OTM) are
     # both within the 2-7% band; ranking must be stable across repeated calls.
     chain = [
-        _row(strike=190, dte=5, bid=0.5, ask=0.53, symbol="B"),
-        _row(strike=194, dte=5, bid=0.4, ask=0.43, symbol="A"),
+        _row(strike=190, dte=5, bid=0.80, ask=0.84, symbol="B"),
+        _row(strike=194, dte=5, bid=0.85, ask=0.89, symbol="A"),
     ]
     first, _ = rank_candidates(chain, spot=SPOT, today=TODAY, policy=DEFAULT_POLICY)
     second, _ = rank_candidates(chain, spot=SPOT, today=TODAY, policy=DEFAULT_POLICY)

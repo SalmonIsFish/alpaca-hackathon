@@ -10,5 +10,8 @@
   "JNJ": {"rationale": "Pharmaceuticals/medical devices; product sales, not lending.", "added": "2026-08-29"},
   "HD": {"rationale": "Home-improvement retail; goods and installation services.", "added": "2026-08-29"},
   "ORCL": {"rationale": "Database/cloud software licensing.", "added": "2026-08-29"},
-  "CSCO": {"rationale": "Networking hardware/software; no financial-services segment.", "added": "2026-08-29"}
+  "CSCO": {"rationale": "Networking hardware/software; no financial-services segment.", "added": "2026-08-29"},
+  "INTC": {"rationale": "Semiconductor manufacturing; chip fabrication/hardware sales, low strike diversifier.", "added": "2026-09-01"},
+  "PFE": {"rationale": "Pharmaceuticals; drug/vaccine sales, healthcare diversifier low price.", "added": "2026-09-01"},
+  "KO": {"rationale": "Consumer staples beverage; soft-drink sales, low debt ~$60 underlying.", "added": "2026-09-01"}
 }

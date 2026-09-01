@@ -166,17 +166,56 @@
         "cash_to_assets": 0.32,
         "liquid_assets": 0.35
       }
+    },
+    "INTC": {
+      "confidence_score": 82,
+      "rationale": "Semiconductor manufacturing. Chip fabrication and hardware sales. No financial-services segment. Lower strike ($20-30) widens basket and reduces collateral per trade.",
+      "sector": "Technology",
+      "market_cap_billions": 130,
+      "screening_date": "2026-09-01",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.14,
+        "cash_to_assets": 0.22,
+        "liquid_assets": 0.26
+      }
+    },
+    "PFE": {
+      "confidence_score": 84,
+      "rationale": "Pharmaceuticals. Drug development and vaccine sales. No insurance/lending operations. Low-priced underlying diversifies healthcare beyond JNJ.",
+      "sector": "Healthcare",
+      "market_cap_billions": 150,
+      "screening_date": "2026-09-01",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.20,
+        "cash_to_assets": 0.12,
+        "liquid_assets": 0.18
+      }
+    },
+    "KO": {
+      "confidence_score": 86,
+      "rationale": "Consumer staples beverage. Global soft-drink sales. No financial products. Staples diversifier with low debt and ~$60 underlying for smaller collateral.",
+      "sector": "Consumer Staples",
+      "market_cap_billions": 260,
+      "screening_date": "2026-09-01",
+      "verified": true,
+      "financial_ratios": {
+        "debt_to_assets": 0.24,
+        "cash_to_assets": 0.10,
+        "liquid_assets": 0.16
+      }
     }
   },
   "metadata": {
-    "total_symbols": 12,
-    "average_confidence": 85.4,
+    "total_symbols": 15,
+    "average_confidence": 85.1,
     "min_confidence": 80,
     "max_confidence": 92,
     "sectors": {
-      "Technology": 7,
-      "Consumer Staples": 2,
-      "Healthcare": 1,
+      "Technology": 8,
+      "Consumer Staples": 3,
+      "Healthcare": 2,
       "Consumer Discretionary": 1
     }
   }

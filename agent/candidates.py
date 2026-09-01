@@ -22,10 +22,10 @@ from agent import cli
 DEFAULT_POLICY = {
     "min_dte": 1,
     "max_dte": 7,
-    "target_otm_pct": 4.0,
+    "target_otm_pct": 3.0,  # A+B: tighter target raises premium vs cushion trade-off for 5-8% P&L push
     "min_otm_pct": 2.0,
     "max_otm_pct": 7.0,
-    "min_premium_per_share": 0.05,
+    "min_premium_per_share": 0.70,  # A+B: floor bump filters $0.23 CSCO noise, surfaces $1.00+ yield
     "max_spread_pct_of_mid": 15.0,
     # Sizing target, not a hard cap -- the risk gate (MAX_POSITION_PCT) is the hard backstop.
     # 35%, not something tighter: this universe is $190-500+/share, so 1 contract of a
@@ -139,8 +139,8 @@ def rank_candidates(
     eligible.sort(
         key=lambda c: (
             abs(c["otm_pct"] - policy["target_otm_pct"]),
+            -c["premium_per_share"],  # A+B: premium second (was DTE) to chase $1.00+ yield within band
             -c["dte"],
-            -c["premium_per_share"],
             c["symbol"],
         )
     )

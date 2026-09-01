@@ -110,6 +110,57 @@ def get_account_data():
         return dict(_LAST_GOOD_ACCOUNT)
 
 
+def get_pnl_attribution():
+    """Premium collected vs MTM vs equity delta, plus collateral estimate.
+    Premium = sum(premium*100*contracts) for SUBMITTED >= OFFICIAL_START.
+    Collateral = sum(cash_required) for SUBMITTED still open (expiry >= today)."""
+    try:
+        settings = get_settings()
+        today = date.today().isoformat()
+        premium_collected = 0.0
+        collateral_held = 0.0
+        total_submitted = 0
+        for line in open(settings.decisions_log_path, 'r'):
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            if d.get('timestamp','') < OFFICIAL_START:
+                continue
+            if d.get('outcome') != 'SUBMITTED':
+                continue
+            sel = d.get('selected') or {}
+            try:
+                prem = float(sel.get('premium_per_share') or 0)
+                contracts = int(sel.get('contracts') or 1)
+                premium_collected += prem * 100 * contracts
+                exp = sel.get('expiration_date') or ''
+                if exp >= today:
+                    collateral_held += float(sel.get('cash_required') or 0)
+                total_submitted += 1
+            except Exception:
+                pass
+        # equity delta from last good account if available
+        eq = _LAST_GOOD_ACCOUNT.get('equity') or 0
+        try:
+            eq = float(eq)
+        except Exception:
+            eq = 0
+        equity_delta = (eq - ACC_START_EQUITY) if eq else 0
+        mtm = equity_delta - premium_collected
+        return {
+            'premium_collected': round(premium_collected, 2),
+            'equity_delta': round(equity_delta, 2),
+            'mtm_unrealized': round(mtm, 2),
+            'collateral_held': round(collateral_held, 2),
+            'open_positions': total_submitted,  # approx; precise via position_list if needed
+        }
+    except FileNotFoundError:
+        return {'premium_collected': 0, 'equity_delta': 0, 'mtm_unrealized': 0, 'collateral_held': 0, 'open_positions': 0}
+    except Exception:
+        return {'premium_collected': 0, 'equity_delta': 0, 'mtm_unrealized': 0, 'collateral_held': 0, 'open_positions': 0}
+
+
 def get_decision_stats():
     """Get statistics from decision log."""
     try:
@@ -605,6 +656,30 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
             </div>
         </div>
 
+        <!-- P&L Attribution (A) -->
+        <div class="card span-12" id="pnlCard">
+            <div class="card-title"><svg><use href="#i-wallet"/></svg>P&L Attribution — Premium vs MTM</div>
+            <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:12px">
+                <div style="grid-column: span 3; background: var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:14px">
+                    <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Premium Collected</div>
+                    <div class="kpi-value" style="font-size:20px" id="kv-premium">$—</div>
+                    <div class="kpi-sub" id="kv-premium-detail">SUBMITTED ≥ OFFICIAL_START ×100</div>
+                </div>
+                <div style="grid-column: span 3; background: var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:14px">
+                    <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Equity Δ vs $100k</div>
+                    <div class="kpi-value" style="font-size:20px" id="kv-equity-delta">$—</div>
+                    <div class="kpi-sub" id="kv-mtm">MTM unrealized: —</div>
+                </div>
+                <div style="grid-column: span 6; background: var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:14px">
+                    <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Buying Power vs Collateral</div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px"><span>Collateral held <strong id="kv-collateral">$—</strong></span><span>Buying Power <strong id="kv-buying">$—</strong></span></div>
+                    <div style="height:14px;background:var(--border);border-radius:999px;overflow:hidden;margin-top:8px;display:flex"><div id="bar-held" style="height:100%;background:var(--warn);width:0%"></div><div id="bar-buying" style="height:100%;background:var(--accent);width:0%"></div></div>
+                    <div class="kpi-sub" id="kv-positions">Open positions (approx): —</div>
+                </div>
+            </div>
+            <div class="kpi-sub" style="margin-top:8px">Equity = $100k + Premium − MTM loss. Premium is realized only if puts expire OTM Thu. Buying Power = Alpaca `buying_power` (free to open).</div>
+        </div>
+
         <!-- Chart -->
         <div class="card span-8">
             <div class="card-title"><svg><use href="#i-pulse"/></svg>Live Equity Curve</div>
@@ -817,6 +892,20 @@ function renderStatus(s) {
     el("kv-bp").textContent = "Buying Power: " + fmtMoney(bp);
     setFlash("kv-cash");
 
+    // Attribution A: premium vs MTM vs collateral
+    var atr = s.attribution || {};
+    var prem = parseFloat(atr.premium_collected) || 0;
+    var delta = parseFloat(atr.equity_delta) || 0;
+    var mtm = parseFloat(atr.mtm_unrealized) || 0;
+    var coll = parseFloat(atr.collateral_held) || 0;
+    if (el("kv-premium")) el("kv-premium").textContent = fmtMoney(prem);
+    if (el("kv-equity-delta")) { el("kv-equity-delta").textContent = (delta>=0?"+":"")+fmtMoney(delta); el("kv-equity-delta").style.color = delta>0.004? "var(--accent)" : delta<-0.004? "var(--danger)" : "var(--muted)"; }
+    if (el("kv-mtm")) el("kv-mtm").textContent = "MTM unrealized: " + (mtm>=0?"+":"")+fmtMoney(mtm) + " (equity − $100k − premium)";
+    if (el("kv-collateral")) el("kv-collateral").textContent = fmtMoney(coll);
+    if (el("kv-buying")) el("kv-buying").textContent = fmtMoney(bp);
+    if (el("kv-positions")) el("kv-positions").textContent = "Open positions (approx): " + (atr.open_positions || 0) + " · Collateral " + fmtMoney(coll) + " locked";
+    var totalCap = coll + bp; if (totalCap>0) { if (el("bar-held")) el("bar-held").style.width = (coll/totalCap*100).toFixed(1)+"%"; if (el("bar-buying")) el("bar-buying").style.width = (bp/totalCap*100).toFixed(1)+"%"; }
+
     var stats = s.stats || {};
     el("kv-total").textContent = stats.total_decisions || 0;
     el("kv-today").textContent = stats.today_trades || 0;
@@ -849,9 +938,16 @@ function gateChip(name, g) {
     var cls = status === "PASS" ? "dg-pass" : (status === "REVIEW" ? "dg-warn" : "dg-fail");
     var extra = "";
     var title = "";
+    var reasonLabel = "";
     if (g && g.confidence_score != null) extra = " · " + g.confidence_score + "%";
-    if (g && g.reason) title = " title='" + esc(g.reason) + "'";
-    return "<span class='decision-gate " + cls + "'" + title + ">" + name.toUpperCase() + ": " + status + extra + "</span>";
+    if (g && g.reason) {
+        title = " title='" + esc(g.reason) + (g.position_pct != null ? " " + g.position_pct.toFixed(1) + "% vs " + g.max_position_pct + "%" : "") + (g.orders_today != null ? " " + g.orders_today + "/" + g.max_orders_per_day : "") + "'";
+        // surface rejection reason visibly — users misread positive Rationale as Gate verdict
+        if (status !== "PASS") reasonLabel = " · " + esc(g.reason);
+        if (g.orders_today != null) reasonLabel += " (" + g.orders_today + "/" + g.max_orders_per_day + ")";
+        if (g.position_pct != null) reasonLabel += " " + g.position_pct.toFixed(1) + "% cap " + g.max_position_pct + "%";
+    }
+    return "<span class='decision-gate " + cls + "'" + title + ">" + name.toUpperCase() + ": " + status + extra + reasonLabel + "</span>";
 }
 
 function decisionHTML(d) {
@@ -885,8 +981,14 @@ function decisionHTML(d) {
     }
 
     var reason = "";
-    if (d.rationale) reason = "<div class='decision-rationale'>&ldquo;" + d.rationale + "&rdquo;</div>";
-    else if (d.detail && d.detail.raw !== undefined) reason = "<div class='decision-rationale'>LLM returned an invalid/empty response &mdash; candidate skipped (fail-closed).</div>";
+    // distinguish Proposer rationale (always positive pitch) from Gate verdict
+    if (d.outcome === "REJECTED" && d.gate_results) {
+        var failReasons = [];
+        Object.keys(d.gate_results).forEach(function(k){ var gv=d.gate_results[k]; if(gv && gv.status!=="PASS") failReasons.push(k.toUpperCase()+": "+esc(gv.reason)); });
+        if (failReasons.length) reason += "<div class='decision-rationale' style='border-left-color:var(--danger);color:var(--danger);font-style:normal'>Gate block: " + failReasons.join(" · ") + "</div>";
+    }
+    if (d.rationale) reason += "<div class='decision-rationale'>&ldquo;" + d.rationale + "&rdquo; <span style='opacity:0.6'>— Proposer pick (not verdict)</span></div>";
+    else if (d.detail && d.detail.raw !== undefined) reason += "<div class='decision-rationale'>LLM returned an invalid/empty response &mdash; candidate skipped (fail-closed).</div>";
 
     return "<div class='decision-row " + (d.css_class === "submitted" ? "s" : d.css_class === "would" ? "w" : d.css_class === "invalid" ? "i" : "r") + "'>"
         + top + details + gates + reason + "</div>";
@@ -987,10 +1089,66 @@ def api_status():
         'agent_running': is_agent_running(),
         'account': data,
         'stats': get_decision_stats(),
+        'attribution': get_pnl_attribution(),
         'market': market_status(),
         'history': list(EQUITY_HISTORY),
         'timestamp': datetime.now().isoformat(),
     })
+
+
+def _metrics_payload():
+    """Build metrics for /api/metrics and nightly report artifact."""
+    from collections import Counter, defaultdict
+    try:
+        settings = get_settings()
+        path = settings.decisions_log_path
+        total = 0
+        by_outcome = Counter()
+        rej = defaultdict(int)
+        premium_by_underlying = Counter()
+        premium_total = 0.0
+        with open(path, 'r') as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    d = json.loads(line)
+                except Exception:
+                    continue
+                if d.get('timestamp','') < OFFICIAL_START:
+                    continue
+                total += 1
+                out = d.get('outcome','')
+                by_outcome[out] += 1
+                if out == 'SUBMITTED':
+                    sel = d.get('selected') or {}
+                    try:
+                        premium_total += float(sel.get('premium_per_share') or 0) * 100 * int(sel.get('contracts') or 1)
+                        premium_by_underlying[d.get('underlying') or '???'] += float(sel.get('premium_per_share') or 0) * 100 * int(sel.get('contracts') or 1)
+                    except Exception:
+                        pass
+                if out == 'REJECTED':
+                    for k,v in (d.get('gate_results') or {}).items():
+                        if v.get('status') != 'PASS':
+                            rej[k] += 1
+        gate_pass_rate = round((by_outcome['SUBMITTED']+by_outcome['WOULD_SUBMIT'])/max(1,total)*100,1) if total else 0
+        return {
+            'total_official': total,
+            'by_outcome': dict(by_outcome),
+            'rejected_by_gate': dict(rej),
+            'gate_pass_rate_pct': gate_pass_rate,
+            'premium_collected': round(premium_total,2),
+            'premium_by_underlying': dict(premium_by_underlying),
+            'attribution': get_pnl_attribution(),
+        }
+    except FileNotFoundError:
+        return {'total_official': 0, 'by_outcome': {}, 'rejected_by_gate': {}, 'gate_pass_rate_pct': 0, 'premium_collected': 0, 'premium_by_underlying': {}, 'attribution': get_pnl_attribution()}
+
+
+@app.route('/api/metrics')
+def api_metrics():
+    """Metrics for judges: gate pass rate, rejected breakdown, premium attribution."""
+    return jsonify(_metrics_payload())
 
 
 @app.route('/api/decisions')
