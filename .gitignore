@@ -13,6 +13,29 @@ DEPLOYMENT_GUIDE.md
 # Runtime evidence log — not committed, generated fresh each run
 logs/*.jsonl
 
+# Scratch / pitch raw — keep repo clean for judges (only docs/pitch/*.pdf is committed)
+*_SUMMARY.md
+*_VALIDATION.md
+*_COMPLETE.md
+MILESTONE2_*.md
+MONDAY_SWITCH.md
+SERVER_*.md
+VIDEO_SCRIPT.md
+WINNING_STRATEGY.md
+JUDGE_FEEDBACK*.md
+REPOSITORY_STATE.md
+QUICK_START.md
+REDIRECT_FIX.md
+CRON_IMPLEMENTATION_SUMMARY.md
+DATABANK_INTEGRATION_SUMMARY.md
+DEPLOYMENT_STATUS.md
+FINAL_*.md
+SCHEDULER_README.md
+PIPELINE_RUN_SUMMARY.md
+logs/report-*.md
+docs/pitch/draft.html
+docs/pitch/raw/
+
 # Editor / OS noise
 .vscode/
 .idea/

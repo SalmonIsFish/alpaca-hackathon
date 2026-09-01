@@ -25,16 +25,20 @@ A single cash-secured put opportunity derived from a live Alpaca option chain, c
 _Avoid_: Contract, opportunity, trade idea
 
 **Ranker**:
-The deterministic pure function `candidates.py:rank_candidates` that filters chains by DTE, OTM band, live bid and spread, then sorts eligible Candidates by distance to target OTM and premium yield.
+The deterministic pure function `candidates.py:rank_candidates` that filters chains by DTE, OTM band, live bid, premium floor and spread, then sorts eligible Candidates by distance to target OTM, then premium yield, then DTE.
 _Avoid_: Quant agent (when meaning the ranker alone), screener
 
 **Quant Agent**:
-The Ranker viewed as the agent responsible for yield optimization — it scores eligible Candidates by premium yield vs assignment risk under the current DTE/OTM/spread bands. Rule-based, no learned model, fully auditable.
+The Ranker viewed as the agent responsible for yield optimization — it scores eligible Candidates by `|OTM−target|` then `premium` then `DTE` within the DTE/OTM/spread/premium bands. Rule-based, no learned model, fully auditable.
 _Avoid_: ML quant, AI quant, prediction engine
 
 **Shortlist**:
-The top 5 eligible Candidates passed to the Proposer. Empty shortlist yields `NO_CANDIDATES`.
+The top 10 eligible Candidates (cap 10, was 5 pre-2026-09-01) passed to the Proposer. Empty shortlist yields `NO_CANDIDATES`.
 _Avoid_: Top candidates, watchlist
+
+**Buying Power**:
+`cash − held collateral − open MTM` reported by `cli.account_get`. Not tunable — it shrinks as cash-secured puts tie `Cash Required` per open position (e.g. 3 shorts lock $94.5k on $100k, leaving ~$23k buying power). `MAX_ORDERS_PER_DAY` does not create buying power.
+_Avoid_: Available cash (when meaning Alpaca buying_power), free margin
 
 ### Reasoning
 
@@ -43,8 +47,8 @@ The Featherless LLM (`Qwen/Qwen3.8-27B`) that selects one index from the Shortli
 _Avoid_: LLM agent, reasoning agent, AI decision-maker
 
 **Rationale**:
-The Proposer's natural-language justification for the selected Candidate, logged verbatim in the Evidence Log.
-_Avoid_: Explanation, thesis
+The Proposer's natural-language justification for the selected Candidate, logged verbatim in the Evidence Log. Always positive pitch — it is **not** the Gate verdict; a `RISK: REJECT` can follow a glowing rationale.
+_Avoid_: Explanation, thesis, gate reason (conflated with rationale)
 
 ### Compliance
 
@@ -53,16 +57,20 @@ A deterministic, fail-closed validator. All Gates must return `PASS` for executi
 _Avoid_: Agent, check, filter, compliance agent
 
 **Shariah Screen**:
-The Gate that validates a Candidate's underlying against a 12-symbol curated universe plus a 688-symbol Malaysian Shariah databank reference, using MSCI Islamic 0–100 confidence scoring. `PASS` only if ≥70%; `REVIEW` (50–69) and `FAIL` both block as `REJECTED`.
+The Gate that validates a Candidate's underlying against a 15-symbol curated universe (was 12 pre-2026-09-01; + INTC, PFE, KO as low-strike ~$20-60 collateral diversifiers) plus a 688-symbol Malaysian Shariah databank reference, using MSCI Islamic 0–100 confidence scoring. `PASS` only if ≥70%; `REVIEW` (50–69) and `FAIL` both block as `REJECTED`.
 _Avoid_: Ethical filter, compliance check, halal check, ethical mandate
 
 **Structure Gate**:
-The Gate that enforces option-structure constraints: cash-secured put only (`cash_required = strike × 100 × contracts ≤ cash`), no margin, 1–7 DTE, 2–7% OTM, spread ≤12% of mid.
+The Gate that enforces option-structure constraints: cash-secured put only (`cash_required = strike × 100 × contracts ≤ cash`), no margin, 1–7 DTE, 2–7% OTM, `target_otm 3%` (was 4%), `min_premium $0.70` (was $0.05), spread ≤15% of mid. `min_premium` bump filters $0.23 CSCO-type noise for 5-8% P&L push.
 _Avoid_: Structure check, options validation
 
 **Risk Gate**:
-The Gate that enforces account-level caps: `MAX_POSITION_PCT=40`, `MAX_ORDERS_PER_DAY=3`, `MAX_DAILY_LOSS_PCT`. It computes `position_pct = cash_required / equity`.
+The Gate that enforces account-level caps: `MAX_POSITION_PCT=40` per-trade, `MAX_ORDERS_PER_DAY=10` (was 3 pre-2026-09-01), `MAX_DAILY_LOSS_PCT`. It computes `position_pct = cash_required / equity` (per-trade, not portfolio) and `orders_today = count(SUBMITTED in Evidence Log for today UTC)` where `orders_today >= max` yields `reason: orders_today_cap`.
 _Avoid_: Risk agent, risk manager, risk check
+
+**Orders Today**:
+`count(Evidence Log rows with outcome SUBMITTED and timestamp today UTC)`. Incremented only on broker submit, not on `WOULD_SUBMIT`/`REJECTED`. Drives `orders_today_cap`.
+_Avoid_: Trades today (ambiguous), fills
 
 ### Execution
 
