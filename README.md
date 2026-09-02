@@ -102,12 +102,25 @@ alpaca profile login --name testing
 python -m agent.pipeline --dry-run     # full cycle, logs WOULD_SUBMIT, never submits
 python -m agent.pipeline               # live: submits on unanimous PASS
 python -m agent.report                 # reconciled P&L attribution
-pytest tests/                          # 49 tests
+pytest tests/                          # 67 tests
 ```
 
 The test suite covers what actually matters: fail-closed on unlisted symbols, margin rejection,
-aggregate collateral accounting, the position-size cap, the DTE/OTM/spread filters, and the
-reconciliation of submitted-versus-filled orders.
+aggregate collateral accounting, account-level interest exposure, the position-size cap, the
+DTE/OTM/spread filters, and the reconciliation of submitted-versus-filled orders.
+
+## Adversarial evidence
+
+`docs/backtest/gate-stress-report.md` puts the chain under twelve scenarios — deterministic,
+offline, byte-identical on every run, calling the real gate functions rather than mocks.
+**Eleven are trades the agent must refuse**, several of them profitable: the richest premium on
+the board on an unlisted symbol, a volatility spike that tempts it past the size cap, a -20%
+overnight gap, an overdrawn account, borrowed stock, and the exact 2x-levered book that existed
+in production on 2026-09-02. The twelfth confirms it still says yes under normal conditions.
+
+```bash
+python scripts/gate_stress.py --write
+```
 
 ## Known limitations
 
@@ -145,6 +158,7 @@ and timestamped for verification.
 | `agent/reconcile.py` | broker-truth P&L attribution |
 | `agent/evidence.py` | append-only decision log |
 | `docs/adr/` | architecture decision records |
+| `scripts/gate_stress.py` | deterministic adversarial harness over the gate chain |
 | `web_app.py` | status page and JSON API |
 
 ## License
