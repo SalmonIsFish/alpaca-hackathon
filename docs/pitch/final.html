@@ -118,7 +118,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 .checklist .ci svg{width:15px;height:15px;flex-shrink:0;margin-top:1px}
 .checklist .ci.done svg{color:var(--accent)}
 .checklist .ci.todo svg{color:var(--warn)}
-@media print{.nav,.note{display:none}.slides{height:auto}.slide{position:relative;display:flex !important;page-break-after:always;height:100vh;animation:none}.slide::before{display:none}}
+@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}.nav,.note{display:none}.slides{height:auto}.slide{position:relative;display:flex !important;page-break-after:always;height:100vh;animation:none}.slide::before{display:none}}
 </style>
 </head>
 <body>
