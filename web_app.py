@@ -442,6 +442,18 @@ header {
 .grid-line { stroke: var(--border); stroke-width: 1; }
 .axis-label { fill: var(--muted); font-size: 10px; font-family: var(--font); }
 .pulse-pt { fill: var(--accent); }
+.eq-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+.eq-hover-pt { fill: var(--accent); stroke: var(--bg, #0B1220); stroke-width: 2; opacity: 0; pointer-events: none; }
+.eq-hit { fill: transparent; }
+.eq-tip {
+    position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -120%);
+    background: rgba(15, 23, 42, 0.96); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 10px; font-size: 12px; line-height: 1.45; white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,.45); transition: opacity .09s ease; z-index: 5;
+}
+.eq-tip .eq-tip-val { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.eq-tip .eq-tip-delta { font-variant-numeric: tabular-nums; }
+.eq-tip .eq-tip-time { color: var(--muted); font-size: 11px; }
 .legend { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
 .legend span { color: var(--muted); font-size: 12px; }
 .legend strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -700,7 +712,11 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
                     <path id="eqArea" class="area-fill" d=""/>
                     <path id="eqLine" class="line-stroke" d=""/>
                     <circle id="eqPoint" class="pulse-pt" r="4" cx="0" cy="0"/>
+                    <line id="eqCross" class="eq-cross" x1="0" y1="0" x2="0" y2="0"/>
+                    <circle id="eqHoverPt" class="eq-hover-pt" r="5" cx="0" cy="0"/>
+                    <rect id="eqHit" class="eq-hit" x="0" y="0" width="100%" height="100%"/>
                 </svg>
+                <div class="eq-tip" id="eqTip"></div>
                 <div class="chart-empty" id="chartEmpty">No data yet — the curve appears once the scheduler starts polling.</div>
             </div>
             <div class="legend">
@@ -819,6 +835,10 @@ function setFlash(id) {
 }
 
 /* ---------- Chart ---------- */
+// Plotted geometry from the last drawChart(), so the hover handler can map a mouse x back
+// to a data point without recomputing the scale. Rewritten on every redraw.
+var EQ_PLOT = { pts: [], padT: 12, ih: 0 };
+
 function drawChart(points) {
     var svg = el("eqChart");
     var W = svg.clientWidth || 600, H = 220, padL = 8, padR = 8, padT = 12, padB = 24;
@@ -828,6 +848,8 @@ function drawChart(points) {
         el("eqArea").setAttribute("d", "");
         el("eqPoint").setAttribute("cx", "0");
         el("eqPoint").setAttribute("cy", "0");
+        EQ_PLOT.pts = [];
+        hideEqTip();
         return;
     }
     el("chartEmpty").style.display = "none";
@@ -870,10 +892,85 @@ function drawChart(points) {
         grid.appendChild(t1);
     }
 
+    EQ_PLOT = {
+        pts: points.map(function (p, i) { return { x: X(i), y: Y(p.e), e: p.e, t: p.t }; }),
+        padT: padT, ih: ih
+    };
+
     el("kv-chart-latest").textContent = fmtMoney(last.e);
     el("kv-chart-high").textContent = fmtMoney(max);
     el("kv-chart-low").textContent = fmtMoney(min);
     el("kv-chart-count").textContent = points.length + " point" + (points.length === 1 ? "" : "s");
+}
+
+/* ---------- Equity curve hover ---------- */
+function hideEqTip() {
+    var tip = el("eqTip"), cross = el("eqCross"), pt = el("eqHoverPt");
+    if (tip) tip.style.opacity = "0";
+    if (cross) cross.style.opacity = "0";
+    if (pt) pt.style.opacity = "0";
+}
+
+function showEqTipAt(clientX) {
+    var svg = el("eqChart"), tip = el("eqTip");
+    if (!svg || !tip || !EQ_PLOT.pts.length) return;
+    var box = svg.getBoundingClientRect();
+    var x = clientX - box.left;
+
+    // nearest plotted point by horizontal distance
+    var best = 0, bestD = Infinity;
+    for (var i = 0; i < EQ_PLOT.pts.length; i++) {
+        var d = Math.abs(EQ_PLOT.pts[i].x - x);
+        if (d < bestD) { bestD = d; best = i; }
+    }
+    var p = EQ_PLOT.pts[best];
+
+    var cross = el("eqCross");
+    cross.setAttribute("x1", p.x); cross.setAttribute("x2", p.x);
+    cross.setAttribute("y1", EQ_PLOT.padT); cross.setAttribute("y2", EQ_PLOT.padT + EQ_PLOT.ih);
+    cross.style.opacity = "1";
+
+    var hp = el("eqHoverPt");
+    hp.setAttribute("cx", p.x); hp.setAttribute("cy", p.y);
+    hp.style.opacity = "1";
+
+    var delta = p.e - ACC_START;
+    var sign = delta >= 0 ? "+" : "";
+    var colour = delta >= 0 ? "var(--accent)" : "var(--bad)";
+    var when = "";
+    if (p.t) {
+        var d2 = new Date(p.t);
+        if (!isNaN(d2.getTime())) {
+            when = d2.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        }
+    }
+    tip.innerHTML = "<div class='eq-tip-val'>" + fmtMoney(p.e) + "</div>"
+        + "<div class='eq-tip-delta' style='color:" + colour + "'>" + sign + fmtMoney(delta)
+        + " (" + sign + (delta / ACC_START * 100).toFixed(3) + "%)</div>"
+        + (when ? "<div class='eq-tip-time'>" + when + "</div>" : "");
+
+    // keep the tooltip inside the card
+    var wrap = svg.parentElement.getBoundingClientRect();
+    var left = Math.min(Math.max(p.x, 60), wrap.width - 60);
+    tip.style.left = left + "px";
+    tip.style.top = p.y + "px";
+    tip.style.opacity = "1";
+}
+
+function initEqHover() {
+    var hit = el("eqHit");
+    if (!hit || hit.dataset.bound) return;
+    hit.dataset.bound = "1";
+    hit.addEventListener("mousemove", function (ev) { showEqTipAt(ev.clientX); });
+    hit.addEventListener("mouseleave", hideEqTip);
+    // touch: follow the finger, clear when it lifts
+    hit.addEventListener("touchstart", function (ev) {
+        if (ev.touches[0]) showEqTipAt(ev.touches[0].clientX);
+    }, { passive: true });
+    hit.addEventListener("touchmove", function (ev) {
+        if (ev.touches[0]) showEqTipAt(ev.touches[0].clientX);
+    }, { passive: true });
+    hit.addEventListener("touchend", hideEqTip);
 }
 
 /* ---------- Status update ---------- */
@@ -969,6 +1066,7 @@ function renderStatus(s) {
         el("agentText").textContent = "Agent Offline";
     }
     drawChart(s.history || []);
+    initEqHover();
     window.__lastRefresh = new Date().toLocaleTimeString();
     updateCountdown();
 }
