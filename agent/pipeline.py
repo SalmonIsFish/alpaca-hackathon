@@ -14,6 +14,38 @@ from agent.gates import risk, structure
 from agent.gates.shariah_enhanced import check_symbol_enhanced, load_enhanced_universe
 
 
+def committed_put_collateral(positions: list[dict]) -> float:
+    """Collateral already owed by open SHORT PUT positions, in dollars.
+
+    Pure -- takes `alpaca position list` output, returns a number. Short puts carry a
+    strike x 100 x contracts obligation that lives entirely outside the `cash` balance the
+    broker reports (selling a put *credits* cash), so without this the structure gate compares
+    each new trade against a balance that looks untouched no matter how much is already
+    committed. That is how PA3W2J1H6I3X reached $201,500 of collateral on $100,273 of cash
+    with seven consecutive "PASS: cash_secured" decisions logged.
+
+    Long puts and equity legs are ignored: neither creates a cash-securing obligation.
+    """
+    total = 0.0
+    for position in positions or []:
+        if position.get("asset_class") != "us_option":
+            continue
+        try:
+            qty = float(position.get("qty", 0))
+        except (TypeError, ValueError):
+            continue
+        if qty >= 0:
+            continue  # long options owe nothing
+        try:
+            parsed = candidates.parse_occ_symbol(position.get("symbol", ""))
+        except ValueError:
+            continue
+        if parsed["type"] != "put":
+            continue
+        total += parsed["strike_price"] * candidates.SHARES_PER_CONTRACT * abs(qty)
+    return total
+
+
 def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None = None) -> dict:
     settings = get_settings()
     active_profile = profile or settings.alpaca_profile
@@ -26,7 +58,8 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
         )
 
     account = cli.account_get(active_profile)
-    cli.position_list(active_profile)  # fetched for future position-aware sizing; not yet used
+    positions = cli.position_list(active_profile)
+    committed_collateral = committed_put_collateral(positions)
 
     universe = load_enhanced_universe(settings.shariah_universe_path)
     symbols_dict = universe.get("symbols", universe)
@@ -34,12 +67,28 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
     cash_available = float(account.get("cash", 0))
     equity = float(account.get("equity", 0))
 
+    # Deployable capital, not the raw balance. Two independent ceilings:
+    #   uncommitted cash -- keeps the book-wide cash-secured invariant true (see
+    #     gates/structure.py), and
+    #   options buying power -- what the broker will actually let us open; sizing off `cash`
+    #     alone had us proposing $27-33k trades against $23,095 of real capacity, which the
+    #     broker would simply have bounced.
+    options_buying_power = float(
+        account.get("options_buying_power") or account.get("buying_power") or 0
+    )
+    deployable_cash = max(0.0, min(cash_available - committed_collateral, options_buying_power))
+
     shortlist = candidates.build_shortlist(
-        symbols, cash_available=cash_available, equity=equity, profile=active_profile, cap=10
+        symbols, cash_available=deployable_cash, equity=equity, profile=active_profile, cap=10
     )
     if not shortlist:
         return evidence.log_decision(
-            {"outcome": "NO_CANDIDATES", "symbols_considered": symbols},
+            {
+                "outcome": "NO_CANDIDATES",
+                "symbols_considered": symbols,
+                "deployable_cash": deployable_cash,
+                "committed_collateral": committed_collateral,
+            },
             path=settings.decisions_log_path,
         )
 
@@ -84,6 +133,7 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
         "shariah": check_symbol_enhanced(selected["underlying"], universe),
         "structure": structure.check_cash_secured_put(
             cash_collateral=cash_available,
+            committed_collateral=committed_collateral,
             strike=selected["strike"],
             contracts=selected["contracts"],
             uses_margin=False,
@@ -106,6 +156,8 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
         "selected": selected,
         "gate_results": gate_results,
         "llm_fallback": fallback_used,
+        "committed_collateral": committed_collateral,
+        "deployable_cash": deployable_cash,
     }
 
     if not all(g["status"] == "PASS" for g in gate_results.values()):
