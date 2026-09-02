@@ -45,12 +45,13 @@ invent a strike, a premium, an expiry, or a symbol; it can only point at a row t
 ranker already approved. If it returns malformed JSON, times out, or declines, `agent/pipeline.py`
 falls back to rank 0 and records that it did (ADR-0002).
 
-**3. Gates — where compliance actually lives.** All three are pure functions. All fail closed.
+**3. Gates — where compliance actually lives.** All four are pure functions. All fail closed.
 
 | Gate | Rule | Source |
 |---|---|---|
 | Shariah | Symbol must be in the curated universe; confidence ≥ 70 passes, 50–69 is REVIEW, below that FAILs. **Unlisted ⇒ FAIL, always.** | `agent/gates/shariah_enhanced.py` |
 | Structure | Cash-secured puts only. `strike × 100 × contracts` must be covered by cash **not already committed to open short puts.** No margin. | `agent/gates/structure.py` |
+| Riba | The *account*, not the trade: positive settled cash, obligations covered by cash rather than broker credit, no borrowed stock, nothing held that accrues interest. | `agent/gates/riba.py` |
 | Risk | Max orders/day, max position % of equity, max daily loss %. | `agent/gates/risk.py` |
 
 `pipeline.py` submits only on unanimous `PASS`. Anything else is logged with the failing gate
@@ -116,8 +117,9 @@ Stated because a compliance story that hides its own gaps isn't one.
   methodology — not live financial-ratio screening from filings. Every symbol in it scores ≥ 80,
   so in practice the only rejection path that fires is "not in the universe". That path is the
   one that matters, but the 0–100 banding currently does less work than it looks like.
-- **No account-level Riba gate.** Margin is refused at the structure gate and the account holds
-  no interest-bearing instruments, but there is no separate periodic sweep asserting it.
+- **The Riba gate asserts margin is not *used*, not that it is unavailable.** Alpaca issued a
+  margin-capable account (`multiplier: 4`) and that cannot be changed from here; the gate proves
+  the account operates out of cash regardless, and logs the capability rather than hiding it.
 - **Position sizing is capital-constrained, not conviction-weighted.** It targets 35% of equity
   and lands on 1–3 contracts because the universe is $27–$500/share.
 - **Free-tier market data** is indicative, not OPRA. Quotes outside market hours are unreliable —

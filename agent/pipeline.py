@@ -10,7 +10,7 @@ from datetime import date
 
 from agent import candidates, cli, evidence, llm
 from agent.config import get_settings
-from agent.gates import risk, structure
+from agent.gates import riba, risk, structure
 from agent.gates.shariah_enhanced import check_symbol_enhanced, load_enhanced_universe
 
 
@@ -137,6 +137,11 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             strike=selected["strike"],
             contracts=selected["contracts"],
             uses_margin=False,
+        ),
+        # Account-level, not trade-level: a compliant put booked into an account financing
+        # itself on credit is still riba. Completes the four-stage chain README describes.
+        "riba": riba.check_account_riba(
+            account, positions, committed_collateral=committed_collateral
         ),
         "risk": risk.check_risk_limits(
             orders_today=orders_today,
