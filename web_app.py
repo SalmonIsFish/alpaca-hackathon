@@ -673,7 +673,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
                 <div style="grid-column: span 3; background: var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:14px">
                     <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Premium Collected</div>
                     <div class="kpi-value" style="font-size:20px" id="kv-premium">$—</div>
-                    <div class="kpi-sub" id="kv-premium-detail">SUBMITTED ≥ OFFICIAL_START ×100</div>
+                    <div class="kpi-sub" id="kv-premium-detail">Broker-confirmed from open positions</div>
                 </div>
                 <div style="grid-column: span 3; background: var(--bg-2); border:1px solid var(--border); border-radius:10px; padding:14px">
                     <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Equity Δ vs $100k</div>
@@ -684,7 +684,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
                     <div style="color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase">Buying Power vs Collateral</div>
                     <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px"><span>Collateral held <strong id="kv-collateral">$—</strong></span><span>Buying Power <strong id="kv-buying">$—</strong></span></div>
                     <div style="height:14px;background:var(--border);border-radius:999px;overflow:hidden;margin-top:8px;display:flex"><div id="bar-held" style="height:100%;background:var(--warn);width:0%"></div><div id="bar-buying" style="height:100%;background:var(--accent);width:0%"></div></div>
-                    <div class="kpi-sub" id="kv-positions">Open positions (approx): —</div>
+                    <div class="kpi-sub" id="kv-positions">Open positions: —</div>
                 </div>
             </div>
             <div class="kpi-sub" style="margin-top:8px">Equity = $100k + Premium − MTM loss. Premium is realized only if puts expire OTM Thu. Buying Power = Alpaca `buying_power` (free to open).</div>
@@ -717,7 +717,7 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
             <div class="gate-cell">
                 <div>
                     <div class="gate-name"><svg><use href="#i-shield"/></svg>Shariah Screen</div>
-                    <div class="gate-desc">Enhanced MSCI methodology + 688-symbol databank</div>
+                    <div class="gate-desc">Curated 15-symbol universe, MSCI Islamic scoring</div>
                 </div>
                 <div class="gate-status"><span class="chip pass">Active</span></div>
             </div>
@@ -730,8 +730,15 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
             </div>
             <div class="gate-cell">
                 <div>
+                    <div class="gate-name"><svg><use href="#i-shield"/></svg>Account Riba Gate</div>
+                    <div class="gate-desc">Cash-funded, no borrowing, no interest-bearing holdings</div>
+                </div>
+                <div class="gate-status"><span class="chip pass">Active</span></div>
+            </div>
+            <div class="gate-cell">
+                <div>
                     <div class="gate-name"><svg><use href="#i-shield"/></svg>Risk Limits</div>
-                    <div class="gate-desc">Position-size cap, margin &amp; liquidity filters</div>
+                    <div class="gate-desc">Position-size cap, orders/day, daily-loss cap</div>
                 </div>
                 <div class="gate-status"><span class="chip pass">Active</span></div>
             </div>
@@ -741,6 +748,15 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
                     <div class="gate-desc">Scheduler runs 24/7 server-side</div>
                 </div>
                 <div class="gate-status"><span class="chip info">Full</span></div>
+            </div>
+        </div>
+
+        <!-- Refusals: the point of the whole system -->
+        <div class="card span-12" id="refusalCard">
+            <div class="card-title"><svg><use href="#i-shield"/></svg>Trades The Agent Refused</div>
+            <div class="kpi-sub" style="margin:-4px 0 10px">Every order blocked by a gate, with the rule that blocked it. No human was involved in any of these.</div>
+            <div class="table-scroll" id="refusalList">
+                <div class="empty-state">Loading refusals…</div>
             </div>
         </div>
 
@@ -1010,8 +1026,41 @@ function decisionHTML(d) {
         + top + details + gates + reason + "</div>";
 }
 
+function renderRefusals(list) {
+    var box = el("refusalList");
+    if (!box) return;
+    var refused = (list || []).filter(function (d) {
+        return d.outcome === "REJECTED" && d.gate_results;
+    });
+    if (!refused.length) {
+        box.innerHTML = "<div class='empty-state'>No refusals in the current window.</div>";
+        return;
+    }
+    box.innerHTML = refused.map(function (d) {
+        var sel = d.selected || {};
+        var failed = [];
+        Object.keys(d.gate_results).forEach(function (k) {
+            var g = d.gate_results[k];
+            if (g && g.status !== "PASS") {
+                failed.push("<span class='chip fail'>" + esc(k.toUpperCase()) + "</span> " + esc(g.reason || ""));
+            }
+        });
+        var collateral = sel.cash_required
+            ? " · $" + Number(sel.cash_required).toLocaleString(undefined, {maximumFractionDigits: 0}) + " collateral"
+            : "";
+        return "<div class='decision-row r'>"
+            + "<div class='decision-top'><strong>" + esc(d.underlying || "—") + "</strong> "
+            + "<span class='decision-sym'>" + esc(sel.symbol || "") + "</span>"
+            + "<span class='decision-outcome o-rejected'>REFUSED</span></div>"
+            + "<div class='decision-details'>" + esc(String(sel.premium_per_share || "?"))
+            + "/share premium" + collateral + "</div>"
+            + "<div class='decision-reason'>" + failed.join(" &nbsp; ") + "</div>"
+            + "</div>";
+    }).join("");
+}
+
 function loadDecisions() {
-    fetch(apiBase() + "decisions?limit=15")
+    fetch(apiBase() + "decisions?limit=60")
         .then(function (r) { return r.json(); })
         .then(function (data) {
             var list = data.decisions || [];
@@ -1021,6 +1070,7 @@ function loadDecisions() {
                 return;
             }
             box.innerHTML = list.map(decisionHTML).join("");
+            renderRefusals(list);
         })
         .catch(function () {
             el("decisionList").innerHTML = "<div class='empty-state'>Live decisions unavailable.</div>";
