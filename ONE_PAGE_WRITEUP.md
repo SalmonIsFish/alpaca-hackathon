@@ -34,7 +34,7 @@
 **What reached the broker.**
 
 - Testing account `PA3V2Y8L0TCX`: first `SUBMITTED` 2026-08-29T17:57:21Z — `NVDA260902P00222500`, 1 contract, $5.92/share, order `bdccffce-071d`, all gates `PASS`.
-- Dedicated account `PA3W2J1H6I3X` (judged): 25 official decisions — **7 SUBMITTED, 8 REJECTED, 6 dry-run, 3 no-candidate, 1 LLM-declined**; gate pass rate 52%. All 8 rejections came from the Risk Gate: MSFT puts at ~$49k collateral = 49% of equity, correctly refused against the 40% cap. **0 manual interventions.**
+- Dedicated account `PA3W2J1H6I3X` (judged): 25 official decisions — **7 SUBMITTED, 8 REJECTED, 6 dry-run, 3 no-candidate, 1 LLM-declined**; gate pass rate 52%. All 8 rejections came from the Risk Gate, in two distinct modes: **3 × `position_size_cap`** — MSFT puts at ~$49k collateral = 48.7–49.0% of equity, refused against the 40% cap — and **5 × `orders_today_cap`**, hit when `MAX_ORDERS_PER_DAY` was still 3. **0 manual interventions.**
 - Equity **$100,077.83 (+0.078%)**, premium collected **$274.00** broker-confirmed, **$94,500** collateral committed against $100,273 cash, 2 open positions.
 - Of 7 submitted orders, **3 contracts actually filled** — the agent was sizing against `cash` while real options buying power was 17× smaller, so four orders never stuck. `/api/metrics` publishes `orders_submitted` beside `orders_open` and names every contract that didn't fill, rather than counting submissions as revenue.
 
@@ -42,7 +42,7 @@
 
 **Limitations & Next Steps.** The Quant Agent and Risk Gate are intentionally rule-based — a deterministic yield-ranker over a learned model, for auditability on a 5-day build (ADRs 0002/0003). The Shariah screen is a hand-scored 15-symbol list, not live ratio screening from filings, and every symbol in it scores ≥80, so the only rejection path that fires in practice is "not in the universe" — that is the path that matters, but the 0–100 banding currently does less work than it appears to. A learned quant, VaR-based risk, and live financial-ratio screening are the next steps. The tradeoff is explicit: the same determinism that caps P&L is what makes compliance provable.
 
-**Result.** +0.078% as of Wed Sep 2, on a book that is fully cash-secured and has never been overridden by a human. The number is small and it is honest — reported from broker positions, with the gap between what the agent submitted and what filled published rather than smoothed. The point is not the number but the property: the same agent that chased premium also provably refused eight trades that violated its mandate, with no human in the loop. That is autonomous trading with a conscience — *Amanah*.
+**Result.** +0.078% as of Wed Sep 2, on a book that is fully cash-secured and has never been overridden by a human. The number is small and it is honest — reported from broker positions, with the gap between what the agent submitted and what filled published rather than smoothed. The point is not the number but the property: the same agent that chased premium also refused three trades for breaching its position-size mandate and throttled five more against its own daily limit, with no human in the loop. That is autonomous trading with a conscience — *Amanah*.
 
 ---
 
