@@ -1,7 +1,6 @@
-# Amanah Trader — One-Page Write-up (DRAFT)
+# Amanah Trader — One-Page Write-up
 
-> **Status:** Skeleton — fill [BRACKETS] after Thu Sep 3 EOD snapshot (official FAQ). Required submission artifact. Keep to one page when rendered (PDF).
-> Official FAQ: `docs.google.com/document/d/13XWsMvW3mFm26xGlBLvdzzJ_eZQ33T4ZrP-vd9eat50` — P&L measured Mon Aug 31 09:30 ET → Thu Sep 3 EOD; Fri Sep 4 reflects assignments only; hosting not required if agent runs autonomously; backtests/simulated shocks allowed as additional evidence.
+> P&L measured Mon Aug 31 09:30 ET → Thu Sep 3 EOD (official FAQ; Fri Sep 4 reflects assignments only). Figures below are as of Wed Sep 2, 04:00 UTC and are broker-confirmed via `position_list`, not derived from submitted orders.
 
 ---
 
@@ -11,34 +10,36 @@
 
 **Solution.** A three-layer autonomous agent that *must* pass deterministic compliance before any order reaches the broker:
 
-1. **Reasoning** — Quant Agent ranks, Proposer proposes. The deterministic Ranker (`candidates.py:rank_candidates`) filters live Alpaca chains (1–7 DTE, 2–7% OTM, spread ≤12%) and scores by premium yield vs distance to target OTM (4.2%); the top 5 form the Shortlist. Featherless `Qwen/Qwen3.8-27B` (Proposer) then selects one index and writes a 1–3 sentence rationale — it never invents strikes, premiums, or greeks, those are code-verified; on `LLM_INVALID_RESPONSE` we fall back to rank 0 deterministically (ADR-0002).
+1. **Reasoning — Ranker proposes shortlist, LLM picks one.** The deterministic Ranker (`candidates.py:rank_candidates`) filters live Alpaca chains (1–7 DTE, 2–7% OTM, bid ≥ $0.70, spread ≤ 15% of mid) and sorts by distance from a 3% OTM target, then premium; the top 10 form the Shortlist. Featherless `Qwen/Qwen3.8-27B` then selects **one index** and writes a 1–3 sentence rationale — it cannot invent strikes, premiums, expiries or symbols, only point at a row code already approved. On malformed output, timeout, or refusal we fall back to rank 0 deterministically and log that we did (ADR-0002).
 
-2. **Compliance** — Gates decide. Three fail-closed Gates run deterministically, no LLM override:
-   - *Shariah Screen* — MSCI Islamic 0–100 confidence scoring against a 12-symbol curated universe + 688-symbol Malaysian Shariah databank reference. `PASS` only if ≥70%; `REVIEW`/`FAIL` both block (see `CONTEXT.md`).
-   - *Structure Gate* — cash-secured only (`cash_required = strike × 100 × contracts`), no margin, DTE/OTM/spread bands enforced.
-   - *Risk Gate* — `MAX_POSITION_PCT=40`, `MAX_ORDERS_PER_DAY=3`, no leverage. Unlike a human-checked system, the agent cannot be talked into an oversized trade.
+2. **Compliance — Gates decide.** Three pure, fail-closed gates, no LLM override:
+   - *Shariah Screen* — curated 15-symbol universe scored 0–100 against MSCI Islamic methodology. ≥70 `PASS`, 50–69 `REVIEW`, below `FAIL`; the pipeline requires `status == "PASS"`, so REVIEW and FAIL both block. **Unlisted symbol ⇒ FAIL, always.**
+   - *Structure Gate* — cash-secured puts only (`strike × 100 × contracts`), checked against cash **net of collateral already committed to open short puts**, so the invariant holds across the whole book rather than trade-by-trade. No margin.
+   - *Risk Gate* — `MAX_POSITION_PCT=40`, `MAX_ORDERS_PER_DAY=10`, `MAX_DAILY_LOSS_PCT=3`. Unlike a human-checked system, the agent cannot be talked into an oversized trade.
 
-3. **Execution** — Broker acts. Only `PASS/PASS/PASS` reaches `alpaca order submit` (Python stdlib `urllib` + Alpaca CLI). Every decision — including rejections and LLM failures — is appended to `logs/decisions.jsonl` with full evidence (candidate, gates, rationale, order ID).
+3. **Execution — Broker acts.** Only `PASS/PASS/PASS` reaches `alpaca order submit`. Every decision — including rejections, LLM failures and no-candidate cycles — is appended to `logs/decisions.jsonl` with full evidence. If no Alpaca executable is reachable the agent raises and halts; it never falls back to placeholder account data.
 
-**Why Shariah as the constraint.** It is the most demanding, externally verifiable ethical filter: a company is either on the screened universe or it is not, and the screening criteria (business activity, debt/cash ratios) are published (MSCI Islamic). If an agent can enforce this autonomously, it can enforce any mandate. That is the contest's creativity criterion.
+**Why Shariah as the constraint.** It is the most demanding, externally verifiable ethical filter: a company is either on the screened universe or it is not, and the screening criteria (business activity, debt/cash ratios) are published (MSCI Islamic). If an agent can enforce this autonomously, it can enforce any mandate.
 
 **Technology.**
 
-- Python, stdlib-only HTTP (`urllib`) and `subprocess` — no `requests`, no `alpaca-py` SDK, for minimal dependency surface.
-- Alpaca via CLI (`alpaca doctor`, `data option chain`, `order submit` — Go binary locally, Python `alpaca_cli.py` on VPS) — per official FAQ, CLI alone satisfies `MCP or CLI`; we chose CLI for cron/autonomy (ADR-0001).
+- Python, stdlib-only HTTP (`urllib`) and `subprocess` — no `requests`, no `alpaca-py` SDK.
+- Alpaca via CLI (`alpaca doctor`, `data option chain`, `order submit`). **Official Go binary v0.0.14 locally; on the VPS `alpaca` is this repo's `alpaca_cli.py`**, a stdlib-`urllib` client implementing the same command surface against the Alpaca REST API, because the Go binary wasn't available for that environment. Per official FAQ, CLI alone satisfies `MCP or CLI`; we chose CLI for cron/autonomy (ADR-0001).
 - Featherless AI (OpenAI-compatible) behind Cloudflare — fixed `User-Agent` bypass for bot-block (discovered against live API 2026-08-29).
-- Systemd scheduler (`agent/scheduler.py`) — ET-aware (`zoneinfo America/New_York`), 60-min cadence Mon–Fri 09:30–16:00 ET, immediate run on start if within window. Takes ~63s end-to-end (12 symbols × chain + LLM).
-- Flask + gunicorn (`-w 1`) + nginx on VPS polling Alpaca every 60s — **optional evidence surface only**; per official FAQ, hosting is *not required* if agent runs autonomously — GitHub + `logs/decisions.jsonl` is sufficient, this is a bonus live view.
+- Systemd scheduler (`agent/scheduler.py`) — ET-aware (`zoneinfo America/New_York`), 60-min cadence Mon–Fri 09:30–16:00 ET, immediate run on start if within window. ~63s end-to-end (15 symbols × chain + LLM).
+- Flask + gunicorn (`-w 1`) + nginx — **optional evidence surface**; per official FAQ hosting is not required when the agent runs autonomously.
+- 49 tests covering fail-closed screening, margin rejection, aggregate collateral, the position cap, DTE/OTM/spread filters, and submitted-vs-filled reconciliation.
 
 **What reached the broker.**
 
-- Testing account `PA3V2Y8L0TCX`: first `SUBMITTED` at [TIMESTAMP] — `[SYMBOL]` `[STRIKE]`put, `[CONTRACTS]`c, premium `$[PREMIUM]`/share, `order_id [ID]`, all gates `PASS` (confidence `[SCORE]%`).
-- Dedicated account `PA3W2J1H6I3X` (judged P&L): first fill Mon Aug 31 09:30 ET — [TBD]; week result at **Thu Sep 3 EOD snapshot** (official FAQ — Fri Sep 4 reflects assignments only): equity `$[FINAL]`, P&L `[+/-X.XX]%` vs $100,000, `[N]` trades, `[M]` rejections (e.g., AAPL 93.6% position correctly `REJECTED` by Risk Gate), `0` manual interventions.
-- Full audit trail: `logs/decisions.jsonl` — `[TOTAL]` decisions, `[SUBMITTED]` submitted, `[REJECTED]` rejected, `[WOULD_SUBMIT]` dry-runs. Optional backtest appendix (FAQ-allowed simulated shocks Flat-market) included under `docs/backtest/` as additional guardrail evidence, not scored P&L.
+- Testing account `PA3V2Y8L0TCX`: first `SUBMITTED` 2026-08-29T17:57:21Z — `NVDA260902P00222500`, 1 contract, $5.92/share, order `bdccffce-071d`, all gates `PASS`.
+- Dedicated account `PA3W2J1H6I3X` (judged): 25 official decisions — **7 SUBMITTED, 8 REJECTED, 6 dry-run, 3 no-candidate, 1 LLM-declined**; gate pass rate 52%. All 8 rejections came from the Risk Gate: MSFT puts at ~$49k collateral = 49% of equity, correctly refused against the 40% cap. **0 manual interventions.**
+- Equity **$100,077.83 (+0.078%)**, premium collected **$274.00** broker-confirmed, **$94,500** collateral committed against $100,273 cash, 2 open positions.
+- Of 7 submitted orders, **3 contracts actually filled** — the agent was sizing against `cash` while real options buying power was 17× smaller, so four orders never stuck. `/api/metrics` publishes `orders_submitted` beside `orders_open` and names every contract that didn't fill, rather than counting submissions as revenue.
 
-**Limitations & Next Steps.** Quant Agent and Risk Gate are intentionally rule-based. We kept a deterministic yield-ranker (premium yield vs OTM vs spread, 40% cap, 3/day) for auditability over a 5-day build; a learned quant and VaR-based risk would be Next Steps with a full backtest harness (ADRs 0002/0003). The tradeoff is explicit — the same determinism that caps P&L is what makes compliance provable.
+**Limitations & Next Steps.** The Quant Agent and Risk Gate are intentionally rule-based — a deterministic yield-ranker over a learned model, for auditability on a 5-day build (ADRs 0002/0003). The Shariah screen is a hand-scored 15-symbol list, not live ratio screening from filings, and every symbol in it scores ≥80, so the only rejection path that fires in practice is "not in the universe" — that is the path that matters, but the 0–100 banding currently does less work than it appears to. There is no separate account-level Riba sweep; margin is refused at the structure gate. A learned quant, VaR-based risk, and live financial-ratio screening are the next steps. The tradeoff is explicit: the same determinism that caps P&L is what makes compliance provable.
 
-**Result.** [INSERT FINAL P&L AND ONE-SENTENCE INTERPRETATION — e.g., "+1.2% in 4 sessions, 3 cash-secured puts, 1 gate rejection, fully autonomous, Thu EOD"]. The point is not the number but the property: the same agent that chased premium also provably refused a trade that violated its mandate, without a human in the loop. That is autonomous trading with a conscience — *Amanah*.
+**Result.** +0.078% as of Wed Sep 2, on a book that is fully cash-secured and has never been overridden by a human. The number is small and it is honest — reported from broker positions, with the gap between what the agent submitted and what filled published rather than smoothed. The point is not the number but the property: the same agent that chased premium also provably refused eight trades that violated its mandate, with no human in the loop. That is autonomous trading with a conscience — *Amanah*.
 
 ---
 

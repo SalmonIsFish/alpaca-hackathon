@@ -84,7 +84,10 @@ def check_symbol_enhanced(symbol: str, universe: Dict[str, Any]) -> Dict[str, An
             "methodology": "MSCI_ISLAMIC",
             "financial_ratios": symbol_data.get("financial_ratios"),
             "sector": symbol_data.get("sector"),
-            "recommendation": "PASS" if status in ["PASS", "REVIEW"] else "REJECT"
+            # REVIEW must not read as PASS. pipeline.py gates on `status`, so a REVIEW
+            # already blocks there, but this field said "PASS" for it -- a trap for any
+            # future caller that gates on `recommendation` instead. Fail closed on both.
+            "recommendation": "PASS" if status == "PASS" else "REJECT"
         }
     
     # Handle basic format (fallback)
