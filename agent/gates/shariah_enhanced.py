@@ -1,8 +1,14 @@
-"""Enhanced Shariah compliance gate with confidence scoring.
+"""Shariah business-activity screen with confidence scoring.
 
-This module replaces the basic binary pass/fail with a sophisticated
-confidence scoring system that leverages the Malaysian Shariah databank
-and MSCI Islamic methodology.
+Screens the traded symbol against a curated universe hand-scored 0-100 against MSCI Islamic
+methodology. Unlisted is always FAIL -- an unknown symbol is never an invitation to guess.
+
+Note on `data/malaysian_shariah_databank.json`: that file holds 688 records from the Securities
+Commission Malaysia Shariah Advisory Council (`sc-sac-my-2026-05-29`) and is NOT consulted here.
+It lists Bursa Malaysia tickers, so it cannot screen a US universe -- AAPL has no SC-SAC
+classification. It is retained as evidence of the data-governance pattern (an official regulator
+list, versioned and dated) rather than as an input to this gate. Corrected 2026-09-02, when the
+docstring and the rejection message below both still implied it was being consulted.
 """
 
 from __future__ import annotations
@@ -45,11 +51,10 @@ def check_symbol_enhanced(symbol: str, universe: Dict[str, Any]) -> Dict[str, An
     symbols = universe.get("symbols", universe)  # Handle both formats
     
     if symbol not in symbols:
-        # Not in universe - use Malaysian databank as reference
         return {
             "status": "FAIL",
             "confidence_score": 0,
-            "reason": "Not in curated universe or Malaysian Shariah databank",
+            "reason": "Not in the curated Shariah universe",
             "symbol": symbol,
             "methodology": "MSCI_ISLAMIC",
             "financial_ratios": None,

@@ -730,6 +730,20 @@ footer a { color: var(--muted); text-decoration: underline; text-underline-offse
             </div>
             <div class="gate-cell">
                 <div>
+                    <div class="gate-name"><svg><use href="#i-shield"/></svg>Gharar Gate</div>
+                    <div class="gate-desc">Two-sided price, bounded spread/expiry/IV, delivery assured</div>
+                </div>
+                <div class="gate-status"><span class="chip pass">Active</span></div>
+            </div>
+            <div class="gate-cell">
+                <div>
+                    <div class="gate-name"><svg><use href="#i-shield"/></svg>Maysir Gate</div>
+                    <div class="gate-desc">Funded commitment to acquire, not a wager</div>
+                </div>
+                <div class="gate-status"><span class="chip pass">Active</span></div>
+            </div>
+            <div class="gate-cell">
+                <div>
                     <div class="gate-name"><svg><use href="#i-shield"/></svg>Account Riba Gate</div>
                     <div class="gate-desc">Cash-funded, no borrowing, no interest-bearing holdings</div>
                 </div>

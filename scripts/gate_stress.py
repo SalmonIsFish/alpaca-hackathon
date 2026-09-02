@@ -26,6 +26,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.candidates import DEFAULT_POLICY, rank_candidates  # noqa: E402
+from agent.gates.gharar import check_gharar  # noqa: E402
+from agent.gates.maysir import check_maysir  # noqa: E402
 from agent.gates.riba import check_account_riba  # noqa: E402
 from agent.gates.risk import check_risk_limits  # noqa: E402
 from agent.gates.shariah_enhanced import check_symbol_enhanced  # noqa: E402
@@ -141,17 +143,73 @@ def s_normal_conditions_still_trades():
     eligible, _ = rank_candidates(_chain(100.0, [97.0], bid=1.20),
                                   spot=100.0, today=TODAY, policy=DEFAULT_POLICY)
     c = eligible[0]
+    cand = {**c, "contracts": 1}
     verdicts = [
         check_symbol_enhanced("AAPL", UNIVERSE),
         check_cash_secured_put(cash_collateral=100_000, committed_collateral=0,
                                strike=c["strike"], contracts=1, uses_margin=False),
+        check_gharar(cand, cash_available=100_000),
+        check_maysir(cand, spot=100.0, cash_available=100_000, underlying_is_screened=True),
         check_account_riba(HEALTHY_ACCOUNT, [], committed_collateral=9_700.0),
         check_risk_limits(orders_today=0, position_value=9_700, account_equity=100_000,
                           daily_pnl=0, **LIMITS),
     ]
     status = "PASS" if all(v["status"] == "PASS" for v in verdicts) else "REJECT"
     return status, "AAPL 3% OTM put, $1.20 bid, 2 DTE, $9,700 collateral on $100k", \
-        "all four gates PASS"
+        "all six gates PASS"
+
+
+def _cand(**over):
+    base = {"symbol": "AAPL260904P00307500", "strike": 307.5, "dte": 2,
+            "bid": 0.70, "ask": 0.75, "contracts": 1}
+    base.update(over)
+    return base
+
+
+def s_one_sided_quote():
+    """Observed in real free-feed data: contracts quoted with no bid, and whole underlyings
+    returning ask: 0 outside market hours."""
+    r = check_gharar(_cand(ask=0), cash_available=100_000)
+    return r["status"], "Contract quoted with no ask - a one-sided market", r["reason"]
+
+
+def s_unpriceable_volatility():
+    r = check_gharar(_cand(implied_volatility=3.5), cash_available=100_000)
+    return r["status"], "Implied volatility 350% - the market cannot price it", r["reason"]
+
+
+def s_cannot_deliver():
+    """The classical gharar objection to derivatives: selling what you cannot deliver."""
+    r = check_gharar(_cand(), cash_available=1_000)
+    return r["status"], "$30,750 delivery obligation against $1,000 of cash", r["reason"]
+
+
+def s_naked_put_is_a_wager():
+    r = check_maysir(_cand(), spot=316.0, cash_available=10_000, underlying_is_screened=True)
+    return r["status"], "Uncollateralised short put - no capacity to take delivery", r["reason"]
+
+
+def s_nominally_secured_but_committed_elsewhere():
+    """Looks secured in isolation; the cash is already pledged to the rest of the book."""
+    r = check_maysir(_cand(), spot=316.0, cash_available=100_000,
+                     committed_collateral=94_500, underlying_is_screened=True)
+    return r["status"], "Cash 'covers' it, but $94,500 is already committed", r["reason"]
+
+
+def s_strike_above_market():
+    r = check_maysir(_cand(strike=320.0), spot=316.0, cash_available=100_000,
+                     underlying_is_screened=True)
+    return r["status"], "Strike $320 against $316 spot - assignment is near-certain", r["reason"]
+
+
+def s_zero_dte_wager():
+    r = check_maysir(_cand(dte=0), spot=316.0, cash_available=100_000, underlying_is_screened=True)
+    return r["status"], "Same-session expiry - a bet on today's close", r["reason"]
+
+
+def s_unscreened_underlying_maysir():
+    r = check_maysir(_cand(), spot=316.0, cash_available=100_000, underlying_is_screened=False)
+    return r["status"], "Put on a business that failed the activity screen", r["reason"]
 
 
 SCENARIOS = [
@@ -166,6 +224,14 @@ SCENARIOS = [
     Scenario("Illiquid contract", "Will it refuse an untradeable spread?", s_illiquid_wide_spread),
     Scenario("Volatility spike", "Does rich premium tempt it past the size cap?", s_vol_spike_premium_triples),
     Scenario("Daily loss breach", "Will it stand down after a bad day?", s_daily_loss_breach),
+    Scenario("One-sided quote", "Will it contract at a price nobody is making?", s_one_sided_quote),
+    Scenario("Unpriceable volatility", "Is uncertainty bounded, or merely large?", s_unpriceable_volatility),
+    Scenario("Cannot deliver", "Would it sell what it cannot deliver?", s_cannot_deliver),
+    Scenario("Naked put", "Does it know a wager from a commitment?", s_naked_put_is_a_wager),
+    Scenario("Nominally secured", "Does 'covered' survive the rest of the book?", s_nominally_secured_but_committed_elsewhere),
+    Scenario("Strike above market", "Is this an acquisition or a financing?", s_strike_above_market),
+    Scenario("Zero-day expiry", "Is there a real commitment, or a coin flip?", s_zero_dte_wager),
+    Scenario("Unscreened underlying", "Would it accept delivery of this?", s_unscreened_underlying_maysir),
     Scenario("Normal conditions", "Does it still actually trade?", s_normal_conditions_still_trades),
 ]
 
@@ -179,8 +245,8 @@ def build_report() -> tuple[str, int, int]:
         "real functions in `agent/gates/`; nothing here is mocked, so the report cannot drift",
         "from the code it describes.",
         "",
-        "Eleven of twelve scenarios are adversarial: the agent is offered a trade it must",
-        "refuse, several of them profitable. The twelfth confirms it still says yes under",
+        "All but one scenario is adversarial: the agent is offered a trade it must refuse,",
+        "several of them profitable. The last confirms it still says yes under normal",
         "normal conditions — a chain that refuses everything would prove nothing.",
         "",
         "| # | Scenario | Situation | Verdict | Reason |",

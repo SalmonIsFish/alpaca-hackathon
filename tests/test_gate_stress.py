@@ -38,7 +38,7 @@ def test_harness_is_not_vacuous():
     assert allowed >= 1
     status, _, reason = SCENARIOS[-1].run()
     assert status == "PASS"
-    assert "all four gates PASS" in reason
+    assert "all six gates PASS" in reason
 
 
 def test_harness_is_predominantly_adversarial():
@@ -46,14 +46,16 @@ def test_harness_is_predominantly_adversarial():
     assert refused >= 10
 
 
-def test_all_four_gates_appear_in_refusals():
+def test_all_six_gates_appear_in_refusals():
     """Each gate must be shown actually refusing something, not just present in the chain."""
     report = build_report()[0]
     for reason in (
-        "Not in curated universe",                      # shariah
+        "Not in the curated Shariah universe",          # shariah
         "insufficient_cash_collateral",                 # structure
         "negative_cash_balance_is_an_interest_bearing_loan",  # riba
         "position_size_cap",                            # risk
+        "no_live_ask_price_is_one_sided",               # gharar
+        "position_is_naked_not_a_funded_commitment",    # maysir
     ):
         assert reason in report, reason
 

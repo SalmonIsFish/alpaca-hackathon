@@ -45,12 +45,16 @@ invent a strike, a premium, an expiry, or a symbol; it can only point at a row t
 ranker already approved. If it returns malformed JSON, times out, or declines, `agent/pipeline.py`
 falls back to rank 0 and records that it did (ADR-0002).
 
-**3. Gates — where compliance actually lives.** All four are pure functions. All fail closed.
+**3. Gates — where compliance actually lives.** All six are pure functions. All fail closed.
+They map to the three prohibitions of Islamic commercial law — *riba*, *gharar*, *maysir* —
+plus structure and risk.
 
 | Gate | Rule | Source |
 |---|---|---|
 | Shariah | Symbol must be in the curated universe; confidence ≥ 70 passes, 50–69 is REVIEW, below that FAILs. **Unlisted ⇒ FAIL, always.** | `agent/gates/shariah_enhanced.py` |
 | Structure | Cash-secured puts only. `strike × 100 × contracts` must be covered by cash **not already committed to open short puts.** No margin. | `agent/gates/structure.py` |
+| Gharar | Contractual certainty: price discoverable from a live two-sided market, spread/expiry/IV bounded, delivery capacity assured. | `agent/gates/gharar.py` |
+| Maysir | Commerce, not wagering: funded commitment to acquire a screened asset at a strike below market, beyond same-session expiry. | `agent/gates/maysir.py` |
 | Riba | The *account*, not the trade: positive settled cash, obligations covered by cash rather than broker credit, no borrowed stock, nothing held that accrues interest. | `agent/gates/riba.py` |
 | Risk | Max orders/day, max position % of equity, max daily loss %. | `agent/gates/risk.py` |
 
@@ -102,7 +106,7 @@ alpaca profile login --name testing
 python -m agent.pipeline --dry-run     # full cycle, logs WOULD_SUBMIT, never submits
 python -m agent.pipeline               # live: submits on unanimous PASS
 python -m agent.report                 # reconciled P&L attribution
-pytest tests/                          # 67 tests
+pytest tests/                          # 83 tests
 ```
 
 The test suite covers what actually matters: fail-closed on unlisted symbols, margin rejection,
@@ -111,16 +115,27 @@ DTE/OTM/spread filters, and the reconciliation of submitted-versus-filled orders
 
 ## Adversarial evidence
 
-`docs/backtest/gate-stress-report.md` puts the chain under twelve scenarios — deterministic,
+`docs/backtest/gate-stress-report.md` puts the chain under twenty scenarios — deterministic,
 offline, byte-identical on every run, calling the real gate functions rather than mocks.
-**Eleven are trades the agent must refuse**, several of them profitable: the richest premium on
+**Nineteen are trades the agent must refuse**, several of them profitable: the richest premium on
 the board on an unlisted symbol, a volatility spike that tempts it past the size cap, a -20%
-overnight gap, an overdrawn account, borrowed stock, and the exact 2x-levered book that existed
-in production on 2026-09-02. The twelfth confirms it still says yes under normal conditions.
+overnight gap, an overdrawn account, borrowed stock, a naked put, a same-session wager, a
+one-sided quote with no ask, and the exact 2x-levered book that existed in production on
+2026-09-02. The twentieth confirms it still says yes under normal conditions.
 
 ```bash
 python scripts/gate_stress.py --write
 ```
+
+## The juristic position
+
+Options are named in the gharar and maysir literature as examples of what is *prohibited*, and
+AAOIFI standards generally prohibit conventional options outright.
+[`docs/shariah/position-cash-secured-puts.md`](docs/shariah/position-cash-secured-puts.md)
+states that objection squarely, sets out which specific features of a position drive it
+(*naked*, *pure speculation*), and maps each narrowing condition to the gate that enforces it.
+It is an engineering rationale, **not a fatwa** — the author is not a qualified scholar, and the
+document says so and lists what it does not establish.
 
 ## Known limitations
 
@@ -158,6 +173,7 @@ and timestamped for verification.
 | `agent/reconcile.py` | broker-truth P&L attribution |
 | `agent/evidence.py` | append-only decision log |
 | `docs/adr/` | architecture decision records |
+| `docs/shariah/` | the juristic position and its limits |
 | `scripts/gate_stress.py` | deterministic adversarial harness over the gate chain |
 | `web_app.py` | status page and JSON API |
 

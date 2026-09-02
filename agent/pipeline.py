@@ -10,7 +10,7 @@ from datetime import date
 
 from agent import candidates, cli, evidence, llm
 from agent.config import get_settings
-from agent.gates import riba, risk, structure
+from agent.gates import gharar, maysir, riba, risk, structure
 from agent.gates.shariah_enhanced import check_symbol_enhanced, load_enhanced_universe
 
 
@@ -138,8 +138,24 @@ def run_pipeline(*, underlying: str | None, dry_run: bool, profile: str | None =
             contracts=selected["contracts"],
             uses_margin=False,
         ),
+        # Riba is one of three prohibitions; gharar (contractual uncertainty) and maysir
+        # (wagering) are the other two, and options are named in the literature under both.
+        # These enforce the conditions that narrow those objections -- see
+        # docs/shariah/position-cash-secured-puts.md for the argument and its limits.
+        "gharar": gharar.check_gharar(
+            selected, cash_available=max(0.0, cash_available - committed_collateral)
+        ),
+        "maysir": maysir.check_maysir(
+            selected,
+            spot=selected.get("spot") or 0,
+            cash_available=cash_available,
+            committed_collateral=committed_collateral,
+            underlying_is_screened=(
+                check_symbol_enhanced(selected["underlying"], universe)["status"] == "PASS"
+            ),
+        ),
         # Account-level, not trade-level: a compliant put booked into an account financing
-        # itself on credit is still riba. Completes the four-stage chain README describes.
+        # itself on credit is still riba.
         "riba": riba.check_account_riba(
             account, positions, committed_collateral=committed_collateral
         ),

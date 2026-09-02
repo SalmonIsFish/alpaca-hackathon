@@ -133,6 +133,10 @@ def rank_candidates(
                 "bid": bid,
                 "ask": ask,
                 "premium_per_share": bid,
+                # Carried for gates/gharar.py, which treats an unpriceable contract as
+                # excessive uncertainty. Absent on thin contracts in the free feed; the gate
+                # treats absent as "not a rejection" rather than guessing.
+                "implied_volatility": row.get("impliedVolatility"),
             }
         )
 
@@ -190,6 +194,9 @@ def generate_candidates(
                 "underlying": underlying,
                 "contracts": contracts,
                 "cash_required": contracts * cost_per_contract,
+                # gates/maysir.py needs the reference price to establish that the strike is a
+                # genuine acquisition discount rather than an accepted-assignment financing.
+                "spot": spot,
             }
         )
     return sized
