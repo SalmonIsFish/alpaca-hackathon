@@ -155,7 +155,14 @@ def get_pnl_attribution():
         return dict(_EMPTY_ATTRIBUTION)
 
     attribution.pop('positions', None)
+    # _LAST_GOOD_ACCOUNT is only filled by /api/status, so a cold hit straight to
+    # /api/metrics used to report equity_delta 0. Fetch it here if nobody has yet.
     eq = _LAST_GOOD_ACCOUNT.get('equity') or 0
+    if not eq:
+        try:
+            eq = get_account_data().get('equity') or 0
+        except Exception:
+            eq = 0
     try:
         eq = float(eq)
     except Exception:
