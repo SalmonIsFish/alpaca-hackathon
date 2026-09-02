@@ -45,3 +45,6 @@ desktop.ini
 *.bak
 *.orig
 *.rej
+
+# Working brief for external review - not part of the submission
+FIRM_REVIEW_BRIEF.md
