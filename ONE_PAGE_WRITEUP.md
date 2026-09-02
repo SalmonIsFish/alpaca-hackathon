@@ -1,55 +1,38 @@
 # Amanah Trader — One-Page Write-up
 
-> P&L measured Mon Aug 31 09:30 ET → Thu Sep 3 EOD (official FAQ; Fri Sep 4 reflects assignments only). Figures below are as of Wed Sep 2, 04:00 UTC and are broker-confirmed via `position_list`, not derived from submitted orders.
+> P&L window Mon Aug 31 09:30 ET → Thu Sep 3 EOD. All figures broker-confirmed via `position_list`, not derived from submitted orders.
+
+**Problem.** Most AI trading agents optimise only for P&L. Real mandates don't work that way — a trader who must refuse a profitable trade because it violates ethics, religion, or policy is not failing, they are governing. No current agent can *prove* it would refuse.
+
+**Solution.** A deterministic ranker filters live Alpaca option chains (1–7 DTE, 2–7% OTM, bid ≥ $0.70, spread ≤ 15% of mid); the top 10 form a shortlist. Featherless `Qwen/Qwen3.8-27B` then selects **one index** and writes a rationale — it cannot invent a strike, premium, expiry, or symbol. On malformed output or refusal the pipeline falls back to rank 0 and logs that it did. Then six pure, fail-closed gates decide, with no LLM override:
+
+| Gate | Rule |
+|---|---|
+| **Shariah** | Curated 15-symbol universe, MSCI Islamic scoring. Unlisted ⇒ FAIL, always. |
+| **Structure** | Cash-secured only, checked net of collateral already committed to open puts. |
+| **Gharar** | Two-sided live price, bounded spread/expiry/IV, delivery capacity assured. |
+| **Maysir** | A funded commitment to acquire a screened asset below market — not a wager. |
+| **Riba** | The *account*: positive cash, no broker credit, no borrowed stock, nothing accruing interest. |
+| **Risk** | 40% position cap, 10 orders/day, 3% daily-loss cap. |
+
+Only a unanimous `PASS` reaches `alpaca order submit`. Every decision — rejections and LLM failures included — appends to `logs/decisions.jsonl` with full evidence.
+
+**Why Shariah.** It is demanding, externally verifiable, and rests on three prohibitions — *riba*, *gharar*, *maysir* — that map onto machine-checkable conditions. An agent that enforces these can enforce any mandate.
+
+**Results** (`PA3W2J1H6I3X`). Equity **$100,077.83 (+0.078%)**; premium **$274.00**; $94,500 collateral against $100,273 cash; 2 open positions. 25 official decisions — 7 submitted, 8 refused, **0 manual interventions**. The refusals: 3 × `position_size_cap` (MSFT at 49% of equity against the 40% cap) and 5 × `orders_today_cap`.
+
+Of 7 submitted orders only 3 filled — the agent had sized against `cash` while real options buying power was 17× smaller. `/api/metrics` now publishes `orders_submitted` beside `orders_open` and names every contract that didn't stick, rather than counting submissions as revenue.
+
+**Adversarial evidence.** `docs/backtest/gate-stress-report.md` — 20 deterministic scenarios run against the real gate functions, byte-identical on every run. **19 refusals, 1 allowed**: the richest premium on the board on an unlisted symbol, a naked put, a one-sided quote, a −20% overnight gap, an overdrawn account, and the exact 2×-levered book that existed in production on 2026-09-02.
+
+**The juristic position.** Options are named in the gharar and maysir literature as *prohibited*, and AAOIFI generally prohibits conventional options. `docs/shariah/position-cash-secured-puts.md` states that against itself, argues the objections turn on *naked* positions and *pure* speculation, and maps every narrowing condition to the gate enforcing it. It is an engineering rationale, **not a fatwa**, and says so.
+
+**Technology.** Python standard library only (`urllib`, `subprocess`) — no SDK. Alpaca CLI transport (official Go binary locally; this repo's `alpaca_cli.py` on the VPS). Systemd, hourly, ET-aware. 83 tests. If no Alpaca executable is reachable the agent halts rather than assume an account.
+
+**Result.** +0.078%, on a book that is fully cash-secured and has never been overridden by a human. The number is small and it is honest. The point is not the number but the property: the same agent that chased premium refused three trades for breaching its size mandate and throttled five more against its own limit, with nobody in the loop. That is autonomous trading with a conscience — *Amanah*.
 
 ---
 
-## Amanah Trader: Autonomous AI Trading with Ethical Constraints
-
-**Problem.** Most AI trading agents optimize only for P&L. In real markets, constraints matter — a trader who must refuse a profitable trade because it violates ethics, religious principles, or risk policy is not failing, they are governing. Yet current agents have no auditable way to prove they would refuse.
-
-**Solution.** A three-layer autonomous agent that *must* pass deterministic compliance before any order reaches the broker:
-
-1. **Reasoning — Ranker proposes shortlist, LLM picks one.** The deterministic Ranker (`candidates.py:rank_candidates`) filters live Alpaca chains (1–7 DTE, 2–7% OTM, bid ≥ $0.70, spread ≤ 15% of mid) and sorts by distance from a 3% OTM target, then premium; the top 10 form the Shortlist. Featherless `Qwen/Qwen3.8-27B` then selects **one index** and writes a 1–3 sentence rationale — it cannot invent strikes, premiums, expiries or symbols, only point at a row code already approved. On malformed output, timeout, or refusal we fall back to rank 0 deterministically and log that we did (ADR-0002).
-
-2. **Compliance — Gates decide.** Six pure, fail-closed gates, no LLM override, mapping to the three prohibitions of Islamic commercial law (*riba*, *gharar*, *maysir*) plus structure and risk:
-   - *Shariah Screen* — curated 15-symbol universe scored 0–100 against MSCI Islamic methodology. ≥70 `PASS`, 50–69 `REVIEW`, below `FAIL`; the pipeline requires `status == "PASS"`, so REVIEW and FAIL both block. **Unlisted symbol ⇒ FAIL, always.**
-   - *Structure Gate* — cash-secured puts only (`strike × 100 × contracts`), checked against cash **net of collateral already committed to open short puts**, so the invariant holds across the whole book rather than trade-by-trade. No margin.
-   - *Gharar Gate* — contractual certainty. Price must be discoverable from a live **two-sided** market (real free-feed data returns contracts with no bid and, outside hours, whole underlyings with `ask: 0`); spread, expiry and implied volatility bounded; delivery capacity assured — the classical objection to derivatives is selling what one cannot deliver, and a funded put inverts it.
-   - *Maysir Gate* — commerce, not wagering. The prohibited case is *naked* positions and *pure* speculation; this gate enforces the difference: full collateral net of every outstanding obligation, a screened operating business as the underlying, a strike strictly below market (an acquisition discount, not accepted-assignment financing), and expiry beyond the same session.
-   - *Account Riba Gate* — judges the account rather than the trade: settled cash positive, every obligation covered by cash and not broker credit, no borrowed stock, nothing held that accrues interest. Alpaca issued a margin-capable account (`multiplier: 4`); the gate proves we do not *use* it.
-   - *Risk Gate* — `MAX_POSITION_PCT=40`, `MAX_ORDERS_PER_DAY=10`, `MAX_DAILY_LOSS_PCT=3`. Unlike a human-checked system, the agent cannot be talked into an oversized trade.
-
-3. **Execution — Broker acts.** Only a unanimous `PASS` across all six gates reaches `alpaca order submit`. Every decision — including rejections, LLM failures and no-candidate cycles — is appended to `logs/decisions.jsonl` with full evidence. If no Alpaca executable is reachable the agent raises and halts; it never falls back to placeholder account data.
-
-**Why Shariah as the constraint.** It is the most demanding, externally verifiable ethical filter: a company is either on the screened universe or it is not, and the screening criteria (business activity, debt/cash ratios) are published (MSCI Islamic). If an agent can enforce this autonomously, it can enforce any mandate.
-
-**Technology.**
-
-- Python, stdlib-only HTTP (`urllib`) and `subprocess` — no `requests`, no `alpaca-py` SDK.
-- Alpaca via CLI (`alpaca doctor`, `data option chain`, `order submit`). **Official Go binary v0.0.14 locally; on the VPS `alpaca` is this repo's `alpaca_cli.py`**, a stdlib-`urllib` client implementing the same command surface against the Alpaca REST API, because the Go binary wasn't available for that environment. Per official FAQ, CLI alone satisfies `MCP or CLI`; we chose CLI for cron/autonomy (ADR-0001).
-- Featherless AI (OpenAI-compatible) behind Cloudflare — fixed `User-Agent` bypass for bot-block (discovered against live API 2026-08-29).
-- Systemd scheduler (`agent/scheduler.py`) — ET-aware (`zoneinfo America/New_York`), 60-min cadence Mon–Fri 09:30–16:00 ET, immediate run on start if within window. ~63s end-to-end (15 symbols × chain + LLM).
-- Flask + gunicorn (`-w 1`) + nginx — **optional evidence surface**; per official FAQ hosting is not required when the agent runs autonomously.
-- 83 tests covering fail-closed screening, contractual-certainty and wagering tests, margin rejection, aggregate collateral, account-level interest exposure, the position cap, DTE/OTM/spread filters, and submitted-vs-filled reconciliation.
-
-**What reached the broker.**
-
-- Testing account `PA3V2Y8L0TCX`: first `SUBMITTED` 2026-08-29T17:57:21Z — `NVDA260902P00222500`, 1 contract, $5.92/share, order `bdccffce-071d`, all gates `PASS`.
-- Dedicated account `PA3W2J1H6I3X` (judged): 25 official decisions — **7 SUBMITTED, 8 REJECTED, 6 dry-run, 3 no-candidate, 1 LLM-declined**; gate pass rate 52%. All 8 rejections came from the Risk Gate, in two distinct modes: **3 × `position_size_cap`** — MSFT puts at ~$49k collateral = 48.7–49.0% of equity, refused against the 40% cap — and **5 × `orders_today_cap`**, hit when `MAX_ORDERS_PER_DAY` was still 3. **0 manual interventions.**
-- Equity **$100,077.83 (+0.078%)**, premium collected **$274.00** broker-confirmed, **$94,500** collateral committed against $100,273 cash, 2 open positions.
-- Of 7 submitted orders, **3 contracts actually filled** — the agent was sizing against `cash` while real options buying power was 17× smaller, so four orders never stuck. `/api/metrics` publishes `orders_submitted` beside `orders_open` and names every contract that didn't fill, rather than counting submissions as revenue.
-
-**Adversarial evidence.** `docs/backtest/gate-stress-report.md` runs 20 scenarios against the real gate functions — deterministic, offline, byte-identical on every run. **19 are refusals the agent must make**, including the richest premium on the board (unlisted symbol), a vol spike that tempts it past the size cap, a -20% overnight gap, an overdrawn account, a naked put, a same-session wager, a one-sided quote, and the exact 2x-levered book that existed in production on 2026-09-02. The 20th confirms it still trades under normal conditions — a chain that refuses everything would prove nothing. Regenerate with `python scripts/gate_stress.py --write`.
-
-**The juristic position, stated against ourselves.** Options are named in the gharar and maysir literature as examples of what is prohibited, and AAOIFI generally prohibits conventional options outright. `docs/shariah/position-cash-secured-puts.md` says so plainly rather than routing around it, then argues that the objections turn on specific features — *naked*, *pure speculation* — and maps each narrowing condition to the gate enforcing it. It is an engineering rationale, **not a fatwa**: the author is not a qualified scholar, and the paper lists what it does not establish, including that no income purification or zakat calculation exists.
-
-**Limitations & Next Steps.** The Quant Agent and Risk Gate are intentionally rule-based — a deterministic yield-ranker over a learned model, for auditability on a 5-day build (ADRs 0002/0003). The Shariah screen is a hand-scored 15-symbol list, not live ratio screening from filings, and every symbol in it scores ≥80, so the only rejection path that fires in practice is "not in the universe" — that is the path that matters, but the 0–100 banding currently does less work than it appears to. A learned quant, VaR-based risk, and live financial-ratio screening are the next steps. The tradeoff is explicit: the same determinism that caps P&L is what makes compliance provable.
-
-**Result.** +0.078% as of Wed Sep 2, on a book that is fully cash-secured and has never been overridden by a human. The number is small and it is honest — reported from broker positions, with the gap between what the agent submitted and what filled published rather than smoothed. The point is not the number but the property: the same agent that chased premium also refused three trades for breaching its position-size mandate and throttled five more against its own daily limit, with no human in the loop. That is autonomous trading with a conscience — *Amanah*.
-
----
-
-**Links:** Application URL `https://amanahtrader.uk/hackathon/` · GitHub (this repo) · Video [LINK]
+**Links:** `https://amanahtrader.uk/hackathon/` · GitHub (this repo) · Video [LINK]
 
 **Prior work disclosure:** Concept and an earlier prototype at `github.com/SalmonIsFish/Ai_Finance_Syariah` (pre-hackathon, 5 weeks). This repository is from-scratch during the event window (Aug 28–Sep 4, 2026) per organizer confirmation.

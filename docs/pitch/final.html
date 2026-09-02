@@ -129,11 +129,11 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <section class="slide active">
 <div class="kicker"><span class="live-dot"></span>Alpaca AI Trading Agents Hackathon 2026 — Lablab.ai</div>
 <h1>Amanah Trader<br><span style="color:var(--accent)">Autonomous Shariah-Compliant<br>Options Agent</span></h1>
-<p class="lead">Deterministic gates → LLM proposes, hard rules decide. Live on <strong style="color:var(--text)">PA3W2J1H6I3X</strong> — <strong style="color:var(--accent)">$100,040.94&nbsp;·&nbsp;+0.04%</strong> at Thu snapshot. No human approval after deploy.</p>
+<p class="lead">Deterministic gates → LLM proposes, hard rules decide. Live on <strong style="color:var(--text)">PA3W2J1H6I3X</strong> — <strong style="color:var(--accent)">$100,077.83&nbsp;·&nbsp;+0.078%</strong>, broker-confirmed. No human approval after deploy.</p>
 <div class="chip-row">
 <span class="chip mono">Python + Alpaca CLI</span>
 <span class="chip info mono">Qwen3-27B proposer only</span>
-<span class="chip mono"><svg class="icon accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>19/19 tests</span>
+<span class="chip mono"><svg class="icon accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>83 tests</span>
 <span class="chip warn mono">amanahtrader.uk/hackathon</span>
 </div>
 <p class="lead" style="margin-top:20px;font-size:11.5px;color:var(--muted2)">Prior work <code>github.com/SalmonIsFish/Ai_Finance_Syariah</code> used as spec only — every file authored Aug 28–Sep 4, verified by commit dates.</p>
@@ -147,7 +147,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <div class="card"><h3><svg class="icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>Problem</h3>
 <p class="bullet"><strong>Human-approval = not autonomous.</strong> Old bot required typing <code>EXECUTE PAPER</code> at 10PM. Judging scores autonomy + robustness.<br><br><strong>LLM hallucination risk:</strong> one invented strike = non-compliant trade with no recall.</p></div>
 <div class="card" style="border-color:rgba(34,197,94,.35)"><h3><svg class="icon accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>Our answer</h3>
-<p class="bullet"><strong>Fail-closed gates.</strong> LLM never decides compliance. Shariah + Structure + Risk are pure functions; any REJECT blocks submit.<br><br>LLM only writes a 1-3 sentence <em>rationale</em> (always positive) — the red <code>Gate block</code> is the verdict.</p></div>
+<p class="bullet"><strong>Fail-closed gates.</strong> LLM never decides compliance. Six pure functions &mdash; Shariah, Structure, <strong>Gharar</strong>, <strong>Maysir</strong>, <strong>Riba</strong>, Risk &mdash; cover all three prohibitions of Islamic commercial law; any REJECT blocks submit.<br><br>LLM only writes a 1-3 sentence <em>rationale</em> (always positive) — the red <code>Gate block</code> is the verdict.</p></div>
 </div>
 </section>
 
@@ -160,7 +160,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <div class="farrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
 <div class="fnode"><div class="fi" style="background:rgba(168,85,247,.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><path d="M12 2a5 5 0 015 5c0 1.5-.6 2.4-1.5 3.4L12 14l-3.5-3.6C7.6 9.4 7 8.5 7 7a5 5 0 015-5z"/><path d="M9 18h6M10 21h4"/></svg></div><h4>Proposer</h4><p><code>llm.py:28</code><br>Qwen picks index. JSON only. Fallback to top-ranked if invalid.</p></div>
 <div class="farrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-<div class="fnode"><div class="fi" style="background:var(--accent-dim)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div><h4>Gates</h4><p><code>gates/*.py</code><br>Shariah / Structure / Risk. PASS/PASS/PASS or blocked.</p></div>
+<div class="fnode"><div class="fi" style="background:var(--accent-dim)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div><h4>Gates</h4><p><code>gates/*.py</code><br>Shariah / Structure / Gharar / Maysir / Riba / Risk. Unanimous PASS or blocked.</p></div>
 <div class="farrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
 <div class="fnode"><div class="fi" style="background:var(--warn-dim)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><path d="M3 3v18h18M8 17V9m4 8V5m4 12v-5"/></svg></div><h4>Execution</h4><p><code>agent/cli.py</code><br>Alpaca CLI submit. Scheduler 09:30-16:00 ET hourly.</p></div>
 </div>
@@ -187,7 +187,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <tr><td>KO</td><td>86% Staples, debt 0.24</td><td><span class="badge pass">PASS</span></td></tr>
 <tr><td>Ex.</td><td>55% REVIEW — below 70% threshold</td><td><span class="badge rej">REJECT</span></td></tr>
 </table>
-<p class="bullet" style="margin-top:12px">688-symbol Malaysian databank reference + MSCI methodology. REVIEW 50-69 and FAIL both REJECT — no LLM override.</p>
+<p class="bullet" style="margin-top:12px">MSCI Islamic methodology, hand-scored. REVIEW 50-69 and FAIL both REJECT &mdash; no LLM override. (The 688-record SC-SAC databank in <code>data/</code> lists Bursa Malaysia tickers and cannot classify US symbols; it is retained as data-governance evidence, not consulted by this gate.)</p>
 </div>
 </div>
 </section>
@@ -215,7 +215,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <!-- 6 Live -->
 <section class="slide">
 <div class="kicker"><span class="n">06</span> — Live (now)</div>
-<h2>3 shorts, 5 risk walls,<br>red banner tells truth.</h2>
+<h2>3 fills, 8 refusals,<br>the log tells the truth.</h2>
 <div class="grid" style="grid-template-columns:1.1fr .9fr">
 <div class="card">
 <h3>Decision timeline <span class="tag">ET</span></h3>
@@ -228,10 +228,10 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 </div>
 <div class="card">
 <h3>P&amp;L attribution <span class="tag">dashboard · scale $0–$1,000</span></h3>
-<div class="pnlrow"><span class="lbl">Premium</span><div class="pnlbar"><i style="left:0;width:26.5%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$265</span></div>
-<div class="pnlrow"><span class="lbl">MTM</span><div class="pnlbar"><i style="left:0;width:22.4%;background:linear-gradient(90deg,var(--bad),#F87171)"></i></div><span class="val" style="color:var(--bad)">-$224</span></div>
-<div class="pnlrow" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px"><span class="lbl"><strong style="color:var(--text)">Equity</strong></span><div class="pnlbar"><i style="left:0;width:4%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$40 (0.04%)</span></div>
-<p class="bullet" style="margin-top:14px">Collateral <strong>$94,500</strong> locked, Buying Power <strong>$23,095</strong>. Rent kept only if Thu close OTM — that's Theta, not intraday P&amp;L.</p>
+<div class="pnlrow"><span class="lbl">Premium</span><div class="pnlbar"><i style="left:0;width:26.5%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$274</span></div>
+<div class="pnlrow"><span class="lbl">MTM</span><div class="pnlbar"><i style="left:0;width:7.8%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$78</span></div>
+<div class="pnlrow" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px"><span class="lbl"><strong style="color:var(--text)">Equity</strong></span><div class="pnlbar"><i style="left:0;width:4%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$77.83 (0.078%)</span></div>
+<p class="bullet" style="margin-top:14px">Collateral <strong>$94,500</strong> locked against <strong>$100,273</strong> cash &mdash; genuinely cash-secured, <strong>$5,774</strong> options buying power free. Reported from <code>position_list</code>, never from submitted orders: 7 submitted, only 3 filled, and the gap is published.</p>
 </div>
 </div>
 </section>
@@ -244,7 +244,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <div class="card"><h3><svg class="icon info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Scheduler</h3>
 <p class="bullet"><code>hackathon-scheduler.service</code><br>09:30-16:00 ET hourly, ZoneInfo ET, sleeps weekends.<br><br><strong style="color:var(--accent)">No human click since Mon 09:30.</strong></p></div>
 <div class="card"><h3><svg class="icon warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-6 3 4 4-7"/></svg>Observability</h3>
-<p class="bullet"><code>/api/metrics</code><br>gate_pass <strong>50%</strong><br>rejected_by_gate <code>{risk:5}</code><br>premium_by_underlying <code>{AAPL 134, GOOGL 131}</code><br>Nightly <code>logs/report-YYYY-MM-DD.md</code>.</p></div>
+<p class="bullet"><code>/api/metrics</code><br>gate_pass <strong>52%</strong><br>rejected_by_gate <code>{risk:8}</code><br>premium_by_underlying <code>{AAPL 139, GOOGL 135}</code><br>orders_submitted <code>7</code> &rarr; orders_open <code>3</code><br>Nightly <code>logs/report-YYYY-MM-DD.md</code>.</p></div>
 <div class="card"><h3><svg class="icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>Audit trail</h3>
 <p class="bullet">Now shows <code>Gate block: RISK: orders_today_cap</code> red above the always-positive <em>Proposer pick</em> — mobile-readable without tooltip.</p></div>
 </div>
@@ -252,20 +252,46 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 
 <!-- 8 Close -->
 <section class="slide">
-<div class="kicker"><span class="n">08</span> — What's left</div>
+<div class="kicker"><span class="n">08</span> — Three prohibitions, not one</div>
+<h2>Riba, gharar, maysir.<br>All enforced in code.</h2>
+<div class="grid" style="grid-template-columns:1.05fr .95fr">
+<div class="card">
+<h3>The objection, stated against ourselves</h3>
+<p class="bullet">Options are named in the <em>gharar</em> and <em>maysir</em> literature as examples of what is <strong>prohibited</strong>, and <strong>AAOIFI generally prohibits conventional options outright</strong>. We say so in our own docs rather than routing around it.<br><br>
+The objections turn on two words: <em>naked</em>, and <em>pure</em> speculation. A fully cash-secured put on a screened business, struck below market, is a different act &mdash; and each narrowing condition is a gate, not a claim.<br><br>
+<code>docs/shariah/position-cash-secured-puts.md</code> &mdash; engineering rationale, <strong>not a fatwa</strong>.</p>
+</div>
+<div class="card">
+<h3>Adversarial evidence <span class="tag">deterministic</span></h3>
+<div class="timeline">
+<div class="titem fail"><span class="tmain">Richest premium on the board</span> <span class="tmeta">unlisted symbol <span class="badge rej" style="margin-left:4px">shariah</span></span></div>
+<div class="titem fail"><span class="tmain">Naked put</span> <span class="tmeta">no delivery capacity <span class="badge rej" style="margin-left:4px">maysir</span></span></div>
+<div class="titem fail"><span class="tmain">One-sided quote, no ask</span> <span class="tmeta">price is indeterminate <span class="badge rej" style="margin-left:4px">gharar</span></span></div>
+<div class="titem fail"><span class="tmain">Book already 2&times; levered</span> <span class="tmeta">real production state <span class="badge rej" style="margin-left:4px">structure</span></span></div>
+<div class="titem pass"><span class="tmain">Normal conditions</span> <span class="tmeta">all six gates <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
+</div>
+<p class="bullet" style="margin-top:12px"><code>docs/backtest/gate-stress-report.md</code> &mdash; 20 scenarios against the <em>real</em> gate functions, no mocks, no network, no clock. <strong>19 refused, 1 allowed.</strong> Byte-identical on every run.</p>
+</div>
+</div>
+</section>
+
+<section class="slide">
+<div class="kicker"><span class="n">09</span> — What's left</div>
 <h2>Freeze code.<br>Ship story.</h2>
 <div class="grid">
 <div class="card"><h3><svg class="icon accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Done</h3>
 <div class="checklist">
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Gates 19/19 passing</div>
+<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Gates 83/83 passing</div>
 <div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>15-symbol universe, cap 10</div>
 <div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Dashboard + metrics + attribution</div>
 <div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>PA3W2J1H6I3X live correct after .env fix</div>
+<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Gharar + Maysir + Riba gates shipped</div>
+<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Stress report 19/20 refusals · juristic position paper</div>
 </div></div>
 <div class="card"><h3><svg class="icon warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>To-do Fri</h3>
 <div class="checklist">
 <div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Record 90s demo (submit + reject)</div>
-<div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Finalize ONE_PAGE_WRITEUP</div>
+<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>ONE_PAGE_WRITEUP finalized (642 words)</div>
 <div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Export deck to PDF → <code>docs/pitch/Amanah_Trader_Deck.pdf</code></div>
 <div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Submit early (15:00 UTC)</div>
 </div></div>

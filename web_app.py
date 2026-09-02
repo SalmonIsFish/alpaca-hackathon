@@ -946,10 +946,10 @@ function renderStatus(s) {
     var coll = parseFloat(atr.collateral_held) || 0;
     if (el("kv-premium")) el("kv-premium").textContent = fmtMoney(prem);
     if (el("kv-equity-delta")) { el("kv-equity-delta").textContent = (delta>=0?"+":"")+fmtMoney(delta); el("kv-equity-delta").style.color = delta>0.004? "var(--accent)" : delta<-0.004? "var(--danger)" : "var(--muted)"; }
-    if (el("kv-mtm")) el("kv-mtm").textContent = "MTM unrealized: " + (mtm>=0?"+":"")+fmtMoney(mtm) + " (equity − $100k − premium)";
+    if (el("kv-mtm")) el("kv-mtm").textContent = "MTM unrealized: " + (mtm>=0?"+":"")+fmtMoney(mtm) + " (broker unrealized P&L)";
     if (el("kv-collateral")) el("kv-collateral").textContent = fmtMoney(coll);
     if (el("kv-buying")) el("kv-buying").textContent = fmtMoney(bp);
-    if (el("kv-positions")) el("kv-positions").textContent = "Open positions (approx): " + (atr.open_positions || 0) + " · Collateral " + fmtMoney(coll) + " locked";
+    if (el("kv-positions")) el("kv-positions").textContent = "Open positions: " + (atr.open_positions || 0) + " · Collateral " + fmtMoney(coll) + " locked";
     var totalCap = coll + bp; if (totalCap>0) { if (el("bar-held")) el("bar-held").style.width = (coll/totalCap*100).toFixed(1)+"%"; if (el("bar-buying")) el("bar-buying").style.width = (bp/totalCap*100).toFixed(1)+"%"; }
 
     var stats = s.stats || {};
