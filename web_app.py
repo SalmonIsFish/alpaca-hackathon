@@ -253,6 +253,9 @@ def get_recent_decisions(limit=10):
                     'rationale': data.get('llm_rationale'),
                     'detail': data.get('detail'),
                     'css_class': css_class,
+                    'symbols_considered': data.get('symbols_considered'),
+                    'deployable_cash': data.get('deployable_cash'),
+                    'committed_collateral': data.get('committed_collateral'),
                 }
                 decisions.append(decision)
             except json.JSONDecodeError:
@@ -1133,6 +1136,13 @@ function decisionHTML(d) {
     }
     if (d.rationale) reason += "<div class='decision-rationale'>&ldquo;" + d.rationale + "&rdquo; <span style='opacity:0.6'>— Proposer pick (not verdict)</span></div>";
     else if (d.detail && d.detail.raw !== undefined) reason += "<div class='decision-rationale'>LLM returned an invalid/empty response &mdash; candidate skipped (fail-closed).</div>";
+    else if (d.outcome === "NO_CANDIDATES" && d.deployable_cash != null) {
+        var nSym = Array.isArray(d.symbols_considered) ? d.symbols_considered.length : null;
+        reason += "<div class='decision-rationale' style='opacity:0.75'>Capital-gated: $" + Number(d.deployable_cash).toLocaleString(undefined, {maximumFractionDigits: 0})
+            + " deployable" + (nSym != null ? " vs. " + nSym + " symbols screened" : "")
+            + (d.committed_collateral ? " · $" + Number(d.committed_collateral).toLocaleString(undefined, {maximumFractionDigits: 0}) + " already committed" : "")
+            + " — no affordable, compliant candidate this cycle.</div>";
+    }
 
     return "<div class='decision-row " + (d.css_class === "submitted" ? "s" : d.css_class === "would" ? "w" : d.css_class === "invalid" ? "i" : "r") + "'>"
         + top + details + gates + reason + "</div>";
