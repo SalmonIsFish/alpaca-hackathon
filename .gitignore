@@ -46,5 +46,8 @@ desktop.ini
 *.orig
 *.rej
 
+# Browser-automation debug artifacts (Playwright MCP tool output)
+.playwright-mcp/
+
 # Working brief for external review - not part of the submission
 FIRM_REVIEW_BRIEF.md

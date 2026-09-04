@@ -12,16 +12,29 @@ This script:
 
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime
 
 
 def extract_malaysian_databank():
-    """Extract Malaysian Shariah databank from server."""
+    """Extract Malaysian Shariah databank from server.
+
+    Reads connection details from env vars so no server info is hardcoded:
+    DEPLOY_SSH_KEY (path to key), DEPLOY_SSH_HOST (user@host), DEPLOY_DATA_PATH.
+    """
     print("🔄 Extracting Malaysian Shariah databank from server...")
-    
-    os.system("scp -i ~/.ssh/amanahtrader_vps amanah@159.65.220.83:/home/amanah/amanah-trader/data/shariah-universe/2026-05-29.json data/malaysian_shariah_databank.json")
-    
+
+    ssh_key = os.environ.get("DEPLOY_SSH_KEY", "~/.ssh/<your_key>")
+    ssh_host = os.environ.get("DEPLOY_SSH_HOST", "<user>@<your_server_ip>")
+    remote_path = os.environ.get(
+        "DEPLOY_DATA_PATH", "/path/to/shariah-universe/2026-05-29.json"
+    )
+    subprocess.run(
+        ["scp", "-i", ssh_key, f"{ssh_host}:{remote_path}", "data/malaysian_shariah_databank.json"],
+        check=True,
+    )
+
     with open('data/malaysian_shariah_databank.json', 'r', encoding='utf-8-sig') as f:
         data = json.load(f)
     

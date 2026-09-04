@@ -100,7 +100,7 @@ def setup_oauth():
     print("-" * 70)
     print("To set up OAuth on the server:")
     print("1. SSH into the server with X11 forwarding:")
-    print("   ssh -X -i ~/.ssh/amanahtrader_vps amanah@159.65.220.83")
+    print("   ssh -X -i ~/.ssh/<your_key> <user>@<your_server_ip>")
     print()
     print("2. Run: alpaca profile login --name testing")
     print("   (This will open a browser for OAuth)")
