@@ -87,16 +87,18 @@ Judged account `PA3W2J1H6I3X`, official window from Mon Aug 31 09:30 ET.
 
 | | |
 |---|---|
-| Equity | $100,077.83 (**+0.078%**) |
-| Premium collected, broker-confirmed | $274.00 |
-| Collateral committed | $94,500 of $100,273 cash |
-| Open positions | 2 |
+| Equity | $100,418.59 (**+0.42%**) |
+| Premium collected, broker-confirmed | $817.00 |
+| Collateral committed | $98,050 of $101,056 cash |
+| Open positions | 4 |
 
 That is a small number and it is the real one. Reported figures come from `position_list`, not
-from summing orders the agent submitted — four submitted orders never filled, and an earlier
-version of this dashboard counted them as collected premium (`agent/reconcile.py` exists because
-of that bug). The gap between submitted and filled is published rather than hidden: `/api/metrics`
-reports `orders_submitted` alongside `orders_open` and names every contract that didn't stick.
+from summing orders the agent submitted. Of 11 orders submitted since Monday, 4 remain open; the
+rest either never filled or were fully filled and bought back by an unattended EOD script at
+market open (`agent/reconcile.py` exists to keep this honest — an earlier version of this
+dashboard once counted unfilled submissions as collected premium). The gap between submitted and
+filled is published rather than hidden: `/api/metrics` reports `orders_submitted` alongside
+`orders_open` and names every contract that didn't stick.
 
 ## Running it
 
