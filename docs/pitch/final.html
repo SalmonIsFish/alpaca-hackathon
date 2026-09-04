@@ -118,7 +118,14 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 .checklist .ci svg{width:15px;height:15px;flex-shrink:0;margin-top:1px}
 .checklist .ci.done svg{color:var(--accent)}
 .checklist .ci.todo svg{color:var(--warn)}
-@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}.nav,.note{display:none}.slides{height:auto}.slide{position:relative;display:flex !important;page-break-after:always;height:100vh;animation:none}.slide::before{display:none}}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+  .nav,.note{display:none}
+  .slides{height:auto}
+  .slide{position:relative;display:flex !important;page-break-after:always;height:1080px;width:1920px;animation:none}
+  .slide::before{display:none}
+}
 </style>
 </head>
 <body>
@@ -129,7 +136,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <section class="slide active">
 <div class="kicker"><span class="live-dot"></span>Alpaca AI Trading Agents Hackathon 2026 — Lablab.ai</div>
 <h1>Amanah Trader<br><span style="color:var(--accent)">Autonomous Shariah-Compliant<br>Options Agent</span></h1>
-<p class="lead">Deterministic gates → LLM proposes, hard rules decide. Live on <strong style="color:var(--text)">PA3W2J1H6I3X</strong> — <strong style="color:var(--accent)">$100,077.83&nbsp;·&nbsp;+0.078%</strong>, broker-confirmed. No human approval after deploy.</p>
+<p class="lead">Deterministic gates → LLM proposes, hard rules decide. Live on <strong style="color:var(--text)">PA3W2J1H6I3X</strong> — <strong style="color:var(--accent)">$100,418.59&nbsp;·&nbsp;+0.42%</strong>, broker-confirmed. No human approval after deploy.</p>
 <div class="chip-row">
 <span class="chip mono">Python + Alpaca CLI</span>
 <span class="chip info mono">Qwen3-27B proposer only</span>
@@ -222,8 +229,8 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 </div>
 <div class="card"><h3>Effect on live picks</h3>
 <div class="barwrap"><div class="barlabel"><span>Before</span><b>$0.69</b></div><div class="bartrack"><div class="barfill" style="width:22%;background:linear-gradient(90deg,#475569,#64748B)"></div></div></div>
-<div class="barwrap"><div class="barlabel"><span>After (avg)</span><b>$1.31 – $3.09</b></div><div class="bartrack"><div class="barfill" style="width:88%"></div></div></div>
-<p class="bullet" style="margin-top:14px">4-dataset needs ~40×$69 for 5% — we pitch <strong>premium collected + MTM</strong>, not chase.</p>
+<div class="barwrap"><div class="barlabel"><span>After (avg)</span><b>$0.72 – $3.05</b></div><div class="bartrack"><div class="barfill" style="width:88%"></div></div></div>
+<p class="bullet" style="margin-top:14px">8 fills since the tune, avg $1.42 — we pitch <strong>premium collected + MTM</strong>, not chase.</p>
 </div>
 </div>
 </section>
@@ -231,23 +238,24 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <!-- 6 Live -->
 <section class="slide">
 <div class="kicker"><span class="n">07</span> — Live (now)</div>
-<h2>3 fills, 8 refusals,<br>the log tells the truth.</h2>
+<h2>11 fills, 8 refusals,<br>the log tells the truth.</h2>
 <div class="grid" style="grid-template-columns:1.1fr .9fr">
 <div class="card">
-<h3>Decision timeline <span class="tag">ET</span></h3>
+<h3>Decision timeline <span class="tag">Sep 3, ET</span></h3>
 <div class="timeline">
-<div class="titem pass"><span class="ttime">14:05:17</span> <span class="tmain">SUBMITTED AAPL 307.5P</span> <span class="tmeta">— 4 DTE, 2.87% OTM, $0.67 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
-<div class="titem pass"><span class="ttime">14:06:41</span> <span class="tmain">SUBMITTED AAPL 307.5P</span> <span class="tmeta">— 2.92% OTM, $0.67 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
-<div class="titem pass"><span class="ttime">14:52:44</span> <span class="tmain">SUBMITTED GOOGL 330P</span> <span class="tmeta">— 2.49% OTM, $1.31 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
-<div class="titem fail"><span class="ttime">18:56:10</span> <span class="tmain">REJECTED GOOGL 327.5P</span> <span class="tmeta">— $0.69, $32,750 <span class="badge rej" style="margin-left:4px">risk: orders_today_cap 3/3</span></span></div>
+<div class="titem pass"><span class="ttime">09:35:01</span> <span class="tmain">AUTO-CLOSE AAPL/GOOGL puts</span> <span class="tmeta">— bought-to-close 3 legs at market open <span class="badge pass" style="margin-left:4px">cron, no human</span></span></div>
+<div class="titem pass"><span class="ttime">09:36:40</span> <span class="tmain">SUBMITTED NVDA 222.5P</span> <span class="tmeta">— 6 DTE, 2.41% OTM, $1.74 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
+<div class="titem pass"><span class="ttime">10:38:39</span> <span class="tmain">SUBMITTED AAPL 320P</span> <span class="tmeta">— 6 DTE, 2.89% OTM, $1.15 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
+<div class="titem pass"><span class="ttime">11:39–12:39</span> <span class="tmain">SUBMITTED INTC 88P×3, 87P×2</span> <span class="tmeta">— 6 DTE, 2.6–3.9% OTM, $0.72–$1.15 <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
+<div class="titem fail"><span class="ttime">13:39–15:40</span> <span class="tmain">NO_CANDIDATES ×3</span> <span class="tmeta">— $3,006 deployable, nothing fits <span class="badge rej" style="margin-left:4px">capacity-gated</span></span></div>
 </div>
 </div>
 <div class="card">
 <h3>P&amp;L attribution <span class="tag">dashboard · scale $0–$1,000</span></h3>
-<div class="pnlrow"><span class="lbl">Premium</span><div class="pnlbar"><i style="left:0;width:27.4%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$274</span></div>
-<div class="pnlrow"><span class="lbl">MTM</span><div class="pnlbar"><i style="left:0;width:18.2%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$182</span></div>
-<div class="pnlrow" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px"><span class="lbl"><strong style="color:var(--text)">Equity</strong></span><div class="pnlbar"><i style="left:0;width:18.2%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$181.83 (0.182%)</span></div>
-<p class="bullet" style="margin-top:14px">Collateral <strong>$94,500</strong> locked against <strong>$100,273</strong> cash &mdash; genuinely cash-secured, <strong>$5,774</strong> options buying power free. Reported from <code>position_list</code>, never from submitted orders: 7 submitted, only 3 filled, and the gap is published.</p>
+<div class="pnlrow"><span class="lbl">Premium</span><div class="pnlbar"><i style="left:0;width:81.7%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$817</span></div>
+<div class="pnlrow"><span class="lbl">MTM</span><div class="pnlbar"><i style="left:0;width:18%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$180</span></div>
+<div class="pnlrow" style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px"><span class="lbl"><strong style="color:var(--text)">Equity</strong></span><div class="pnlbar"><i style="left:0;width:41.9%;background:linear-gradient(90deg,var(--accent),#4ADE80)"></i></div><span class="val" style="color:var(--accent)">+$418.59 (0.42%)</span></div>
+<p class="bullet" style="margin-top:14px">Collateral <strong>$98,050</strong> locked against <strong>$101,056</strong> cash &mdash; genuinely cash-secured, <strong>$3,006</strong> options buying power free. Reported from <code>position_list</code>, never from submitted orders: 11 submitted since Monday, 4 currently open &mdash; the rest closed automatically at market open via the EOD script, and the gap is published.</p>
 </div>
 </div>
 </section>
@@ -260,7 +268,7 @@ p.lead{color:var(--muted);font-size:15.5px;max-width:820px;line-height:1.55}
 <div class="card"><h3><svg class="icon info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Scheduler</h3>
 <p class="bullet"><code>hackathon-scheduler.service</code><br>09:30-16:00 ET hourly, ZoneInfo ET, sleeps weekends.<br><br><strong style="color:var(--accent)">No human click since Mon 09:30.</strong></p></div>
 <div class="card"><h3><svg class="icon warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-6 3 4 4-7"/></svg>Observability</h3>
-<p class="bullet"><code>/api/metrics</code><br>gate_pass <strong>40.6%</strong><br>rejected_by_gate <code>{risk:8}</code><br>premium_by_underlying <code>{AAPL 139, GOOGL 135}</code><br>orders_submitted <code>7</code> &rarr; orders_open <code>3</code><br><span style="font-size:11px">(denominator grows as capacity-limited <code>NO_CANDIDATES</code> cycles accumulate &mdash; not new rejections; capacity is $5.7k, only PFE-class strikes fit)</span><br>Nightly <code>logs/report-YYYY-MM-DD.md</code>.</p></div>
+<p class="bullet"><code>/api/metrics</code><br>gate_pass <strong>40.5%</strong><br>rejected_by_gate <code>{risk:8}</code><br>premium_by_underlying <code>{AAPL 130, INTC 494, NVDA 193}</code><br>orders_submitted <code>11</code> &rarr; orders_open <code>4</code><br><span style="font-size:11px">(denominator grows as capacity-limited <code>NO_CANDIDATES</code> cycles accumulate &mdash; not new rejections; capacity is now $3.0k after 4 fills, no remaining candidate clears its collateral floor)</span><br>Nightly <code>logs/report-YYYY-MM-DD.md</code>.</p></div>
 <div class="card"><h3><svg class="icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>Audit trail</h3>
 <p class="bullet">Now shows <code>Gate block: RISK: orders_today_cap</code> red above the always-positive <em>Proposer pick</em> — mobile-readable without tooltip.</p></div>
 </div>
@@ -287,32 +295,8 @@ The objections turn on two words: <em>naked</em>, and <em>pure</em> speculation.
 <div class="titem pass"><span class="tmain">Normal conditions</span> <span class="tmeta">all six gates <span class="badge pass" style="margin-left:4px">PASS</span></span></div>
 </div>
 <p class="bullet" style="margin-top:12px"><code>docs/backtest/gate-stress-report.md</code> &mdash; 20 scenarios against the <em>real</em> gate functions, no mocks, no network, no clock. <strong>19 refused, 1 allowed.</strong> Byte-identical on every run.</p>
-<p class="bullet" style="margin-top:8px;font-size:12px;opacity:0.75">Honest caveat: since deploy, live cycles have been capital-gated to NO_CANDIDATES before reaching the gate chain &mdash; gharar/maysir/riba are proven here, not yet by a live production verdict.</p>
+<p class="bullet" style="margin-top:8px;font-size:12px;opacity:0.75">Update Sep 3: capital gating lifted after the EOD auto-close freed collateral &mdash; NVDA/AAPL/INTC fills that morning cleared gharar (spread_pct, delivery_funded), maysir (would_take_delivery), and riba (broker_margin_available) with real numbers in <code>logs/decisions.jsonl</code>, not just the stress harness.</p>
 </div>
-</div>
-</section>
-
-<section class="slide">
-<div class="kicker"><span class="n">10</span> — What's left</div>
-<h2>Freeze code.<br>Ship story.</h2>
-<div class="grid">
-<div class="card"><h3><svg class="icon accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Done</h3>
-<div class="checklist">
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Gates 83/83 passing</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>15-symbol universe, cap 10</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Dashboard + metrics + attribution</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>PA3W2J1H6I3X live correct after .env fix</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Gharar + Maysir + Riba gates shipped</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Stress report 19/20 refusals · juristic position paper</div>
-</div></div>
-<div class="card"><h3><svg class="icon warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>To-do Fri</h3>
-<div class="checklist">
-<div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Record 90s demo (submit + reject)</div>
-<div class="ci done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>ONE_PAGE_WRITEUP finalized (642 words)</div>
-<div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Export deck to PDF → <code>docs/pitch/Amanah_Trader_Deck.pdf</code></div>
-<div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Refresh live figures (deck + write-up) right before recording &mdash; equity moves until Thu close</div>
-<div class="ci todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Submit early (15:00 UTC)</div>
-</div></div>
 </div>
 <p class="lead" style="margin-top:20px;font-size:16px;color:var(--text)">We prove AI trading can be both profitable <em style="color:var(--accent)">and</em> ethical — the agent doesn't just trade, it refuses.</p>
 </section>
