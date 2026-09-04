@@ -33,6 +33,6 @@ Wednesday's session shows the full lifecycle unattended: at 09:35 ET a cron job 
 
 ---
 
-**Links:** `https://amanahtrader.uk/hackathon/` · GitHub (this repo) · Video [LINK]
+**Links:** `https://amanahtrader.uk/hackathon/` · GitHub (this repo)
 
 **Prior work disclosure:** Concept and an earlier prototype at `github.com/SalmonIsFish/Ai_Finance_Syariah` (pre-hackathon, 5 weeks). This repository is from-scratch during the event window (Aug 28–Sep 4, 2026) per organizer confirmation.
