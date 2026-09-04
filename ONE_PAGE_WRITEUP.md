@@ -4,7 +4,7 @@
 
 **Problem.** Most AI trading agents optimise only for P&L. Real mandates don't work that way — a trader who must refuse a profitable trade because it violates ethics, religion, or policy is not failing, they are governing. No current agent can *prove* it would refuse.
 
-**Solution.** A deterministic ranker filters live Alpaca option chains (1–7 DTE, 2–7% OTM, bid ≥ $0.70, spread ≤ 15% of mid); the top 10 form a shortlist. Featherless `Qwen/Qwen3.8-27B` then selects **one index** and writes a rationale — it cannot invent a strike, premium, expiry, or symbol. On malformed output or refusal the pipeline falls back to rank 0 and logs that it did. Then six pure, fail-closed gates decide, with no LLM override:
+**Solution.** A deterministic ranker filters live Alpaca option chains (1–7 DTE, 2–7% OTM, bid ≥ $0.70, spread ≤ 15% of mid); the top 10 form a shortlist. Featherless `Qwen/Qwen3.8-27B` then selects **one index** and writes a rationale — it cannot invent a strike, premium, expiry, or symbol. That pick is a judgment call, not a lookup: weighing OTM cushion against premium against days-to-expiry together, the way a trader reads a chain, rather than a hand-tuned formula optimizing one axis — and it matters more as the candidate pool grows, not less. On malformed output or refusal the pipeline falls back to rank 0 and logs that it did. Then six pure, fail-closed gates decide, with no LLM override:
 
 | Gate | Rule |
 |---|---|
@@ -18,6 +18,8 @@
 Only a unanimous `PASS` reaches `alpaca order submit`. Every decision — rejections and LLM failures included — appends to `logs/decisions.jsonl` with full evidence.
 
 **Why Shariah.** It is demanding, externally verifiable, and rests on three prohibitions — *riba*, *gharar*, *maysir* — that map onto machine-checkable conditions. An agent that enforces these can enforce any mandate.
+
+**Market.** ~1.9B Muslims globally; Islamic finance assets estimated near $4T. Existing halal-investing products — Wahed Invest, Zoya — screen a stock once, at onboarding, and stop; neither re-verifies gharar, maysir, or riba per trade. We'd license this gate engine to Islamic fintechs as a per-trade verification API, or run it directly as a fee-based managed income strategy.
 
 **Results** (`PA3W2J1H6I3X`). Equity **$100,418.59 (+0.42%)**; premium collected **$817.00**; $98,050 collateral against $101,056 cash; 4 open positions (NVDA, AAPL, 2× INTC puts). 42 official decisions — 11 submitted, 8 refused, **0 manual interventions**. The refusals: 3 × `position_size_cap` (MSFT at 49% of equity against the 40% cap) and 5 × `orders_today_cap`.
 
